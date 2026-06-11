@@ -1032,6 +1032,11 @@ function normalizeApiMatches(data) {
     const away = match.awayTeam?.name || match.strAwayTeam || match.away;
     const kickoff = match.utcDate || match.dateEvent && `${match.dateEvent}T${match.strTime || "00:00:00"}Z` || match.kickoff;
     const statusMap = {
+      TIMED: "SCHEDULED",
+      SCHEDULED: "SCHEDULED",
+      IN_PLAY: "IN_PLAY",
+      PAUSED: "PAUSED",
+      FINISHED: "FINISHED",
       Match_Finished: "FINISHED",
       FT: "FINISHED",
       "Not Started": "SCHEDULED",
@@ -1068,14 +1073,26 @@ async function syncApi() {
       body: JSON.stringify({ url: state.api.url, token: state.api.token }),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const imported = normalizeApiMatches(await response.json());
+    const data = await response.json();
+    const imported = normalizeApiMatches(data);
     if (!imported.length) throw new Error("La API no devolvió partidos reconocibles");
+
+    // Mostrar info del primer partido para debug
+    const firstMatch = data.matches?.[0];
+    if (firstMatch) {
+      console.log("API primer partido:", firstMatch.homeTeam?.name, "vs", firstMatch.awayTeam?.name);
+      console.log("  status:", firstMatch.status);
+      console.log("  score:", firstMatch.score?.fullTime?.home, "-", firstMatch.score?.fullTime?.away);
+    }
 
     // Hacer match por equipos (normalizado) en lugar de por ID
     let updatedCount = 0;
+    let liveCount = 0;
     imported.forEach((apiMatch) => {
       const apiHome = normalizeCountryName(apiMatch.home);
       const apiAway = normalizeCountryName(apiMatch.away);
+      
+      if (apiMatch.status === "IN_PLAY" || apiMatch.status === "PAUSED") liveCount++;
       
       // Buscar partido existente con mismos equipos
       const existingMatch = state.matches.find((local) => {
@@ -1097,7 +1114,10 @@ async function syncApi() {
     saveState();
     renderAll();
     navigate("admin");
-    showToast(`${updatedCount} partidos actualizados`);
+    const msg = liveCount > 0 
+      ? `${updatedCount} partidos (${liveCount} en vivo)` 
+      : `${updatedCount} partidos actualizados (API: ${firstMatch?.status || "sin datos"})`;
+    showToast(msg);
   } catch (error) {
     console.error(error);
     showToast(`No fue posible sincronizar: ${error.message}`);
@@ -1204,24 +1224,31 @@ async function fetchStandings() {
 
 async function renderStandings() {
   const container = $("#standingsContainer");
+  if (!container) {
+    console.error("renderStandings: contenedor no encontrado");
+    return;
+  }
   container.innerHTML = '<div class="standings-loading">Cargando tablas de grupos...</div>';
   
   const data = await fetchStandings();
+  console.log("Standings data:", data);
   
   if (!data || !data.standings) {
     container.innerHTML = `
       <div class="standings-error">
         <p>No se pudieron cargar las tablas de posiciones.</p>
         <p>Verifica que el token de API esté configurado en Admin.</p>
+        ${!state.api.token ? '<p><strong>⚠️ No hay token de API configurado</strong></p>' : ''}
       </div>
     `;
     return;
   }
   
   const groups = data.standings.filter(s => s.type === "TOTAL");
+  console.log("Grupos encontrados:", groups.length);
   
   if (groups.length === 0) {
-    container.innerHTML = '<div class="standings-error">No hay datos de grupos disponibles.</div>';
+    container.innerHTML = '<div class="standings-error">No hay datos de grupos disponibles aún.</div>';
     return;
   }
   
