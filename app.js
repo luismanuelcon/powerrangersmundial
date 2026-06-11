@@ -55,7 +55,15 @@ function loadState() {
           }
         : official;
     });
-    matches.push(...savedMatches.filter((match) => !officialIds.has(match.id)));
+    // Solo agregar partidos guardados que no dupliquen equipos de partidos oficiales
+    const officialTeamPairs = new Set(initialMatches.map((m) => 
+      `${normalizeCountryName(m.home)}|${normalizeCountryName(m.away)}`
+    ));
+    matches.push(...savedMatches.filter((match) => {
+      if (officialIds.has(match.id)) return false;
+      const teamPair = `${normalizeCountryName(match.home)}|${normalizeCountryName(match.away)}`;
+      return !officialTeamPairs.has(teamPair);
+    }));
 
     return {
       ...defaultState(),
@@ -352,6 +360,33 @@ function calculateStats(person) {
   return { ...person, exact, correct, points, firstPredictionAt };
 }
 
+function calculateDayStats(person, dateStr = null) {
+  const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+  let exact = 0;
+  let correct = 0;
+  let points = 0;
+  const predictions = state.predictions[person.id] || {};
+
+  state.matches.forEach((match) => {
+    const matchDate = match.kickoff?.slice(0, 10);
+    if (matchDate !== targetDate) return;
+    const prediction = predictions[match.id];
+    if (!prediction) return;
+    if (match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "PAUSED") return;
+    if (match.homeScore == null || match.awayScore == null) return;
+
+    if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
+      exact += 1;
+      points += 2;
+    } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
+      correct += 1;
+      points += 1;
+    }
+  });
+
+  return { ...person, exact, correct, points };
+}
+
 function getRanking() {
   return state.participants
     .map(calculateStats)
@@ -483,7 +518,7 @@ function matchCard(match) {
               ? "Pronóstico bloqueado"
               : "Ingresa ambos marcadores"
       }</div>
-      ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}">👁️ Ver predicciones</button>` : ""}
+      ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver predicciones</button>` : ""}
     </article>
   `;
 }
@@ -590,6 +625,7 @@ function listMatchCard(match) {
               </div>`
         }
       </div>
+      ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver predicciones</button>` : ""}
     </article>
   `;
 }
@@ -762,6 +798,41 @@ function renderRanking() {
         </tr>`,
     )
     .join("");
+
+  // Mostrar último lugar con puntos del día
+  if (ranking.length > 0) {
+    const lastPerson = ranking[ranking.length - 1];
+    const dayStats = calculateDayStats(lastPerson);
+    const todayMatches = state.matches.filter((m) => {
+      const matchDate = m.kickoff?.slice(0, 10);
+      const today = new Date().toISOString().slice(0, 10);
+      return matchDate === today && (m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED");
+    });
+    const isPartial = todayMatches.some((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
+    
+    $("#lastPlace").innerHTML = `
+      <div class="last-place-header">
+        <span class="last-place-icon">🏃</span>
+        <span class="last-place-title">Colero del mundial</span>
+      </div>
+      <div class="last-place-content">
+        <div class="last-place-info">
+          <span class="last-place-avatar">${initials(displayName(lastPerson))}</span>
+          <div class="last-place-details">
+            <strong>${escapeHtml(displayName(lastPerson))}</strong>
+            <small>#${ranking.length} · ${lastPerson.points} puntos totales</small>
+          </div>
+        </div>
+        <div class="last-place-day">
+          <span class="day-label">${isPartial ? "HOY (parcial)" : "HOY"}</span>
+          <span class="day-points ${dayStats.points > 0 ? "positive" : ""}">${dayStats.points > 0 ? "+" : ""}${dayStats.points} pts</span>
+          <small>${dayStats.exact} exacto${dayStats.exact !== 1 ? "s" : ""} · ${dayStats.correct} acierto${dayStats.correct !== 1 ? "s" : ""}</small>
+        </div>
+      </div>
+    `;
+  } else {
+    $("#lastPlace").innerHTML = "";
+  }
 }
 
 function openUserDialog(userId = "") {
