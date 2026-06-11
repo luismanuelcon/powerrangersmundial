@@ -993,11 +993,13 @@ main {
 
 .ranking-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--line);
 }
 
 .ranking-table {
   width: 100%;
+  min-width: 320px;
   border-collapse: collapse;
   background: var(--white);
 }

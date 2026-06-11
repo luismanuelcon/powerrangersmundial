@@ -64,6 +64,15 @@ function loadState() {
       const teamPair = `${normalizeCountryName(match.home)}|${normalizeCountryName(match.away)}`;
       return !officialTeamPairs.has(teamPair);
     }));
+    
+    // Limpiar duplicados existentes (por equipos normalizados)
+    const seenTeamPairs = new Set();
+    const dedupedMatches = matches.filter((match) => {
+      const teamPair = `${normalizeCountryName(match.home)}|${normalizeCountryName(match.away)}`;
+      if (seenTeamPairs.has(teamPair)) return false;
+      seenTeamPairs.add(teamPair);
+      return true;
+    });
 
     return {
       ...defaultState(),
@@ -71,7 +80,7 @@ function loadState() {
       participants,
       predictions,
       currentUserId: validUser ? saved.currentUserId : null,
-      matches,
+      matches: dedupedMatches,
     };
   } catch {
     return defaultState();
@@ -278,13 +287,24 @@ function teamName(name) {
 }
 
 function normalizeCountryName(name) {
-  return name
+  let normalized = name
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^\w\s.]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+  // Normalizar variantes comunes
+  const aliases = {
+    "bosniaherzegovina": "bosnia and herzegovina",
+    "bosnia herzegowina": "bosnia and herzegovina",
+    "korea republic": "south korea",
+    "republic of korea": "south korea",
+    "usa": "united states",
+    "ivory coast": "cote divoire",
+    "cote divoire": "ivory coast",
+  };
+  return aliases[normalized] || normalized;
 }
 
 function flagMarkup(name, size = "large") {
