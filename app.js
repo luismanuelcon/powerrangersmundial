@@ -467,6 +467,7 @@ function navigate(viewId) {
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (viewId === "partidos") renderMatchesPage();
   if (viewId === "ranking") renderRanking();
+  if (viewId === "grupos") renderStandings();
   if (viewId === "admin") renderAdmin();
 }
 
@@ -1106,6 +1107,155 @@ async function syncApi() {
   }
 }
 
+// Sincronización silenciosa para auto-refresh
+async function silentSync() {
+  if (!state.api.url || !state.api.token) return;
+  try {
+    const response = await fetch("/api/football-proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: state.api.url, token: state.api.token }),
+    });
+    if (!response.ok) return;
+    const imported = normalizeApiMatches(await response.json());
+    if (!imported.length) return;
+
+    let changed = false;
+    imported.forEach((apiMatch) => {
+      const apiHome = normalizeCountryName(apiMatch.home);
+      const apiAway = normalizeCountryName(apiMatch.away);
+      const existingMatch = state.matches.find((local) => {
+        const localHome = normalizeCountryName(local.home);
+        const localAway = normalizeCountryName(local.away);
+        return localHome === apiHome && localAway === apiAway;
+      });
+      if (existingMatch) {
+        if (existingMatch.status !== apiMatch.status ||
+            existingMatch.homeScore !== apiMatch.homeScore ||
+            existingMatch.awayScore !== apiMatch.awayScore) {
+          existingMatch.status = apiMatch.status;
+          existingMatch.homeScore = apiMatch.homeScore;
+          existingMatch.awayScore = apiMatch.awayScore;
+          changed = true;
+        }
+      }
+    });
+    
+    if (changed) {
+      saveState();
+      renderAll();
+      if ($("#ranking").classList.contains("active-view")) renderRanking();
+      if ($("#grupos").classList.contains("active-view")) renderStandings();
+    }
+  } catch (error) {
+    console.error("Silent sync error:", error);
+  }
+}
+
+// Obtener y renderizar standings de grupos
+let standingsCache = null;
+let standingsCacheTime = 0;
+
+async function fetchStandings() {
+  const now = Date.now();
+  // Cache por 2 minutos
+  if (standingsCache && now - standingsCacheTime < 120_000) {
+    return standingsCache;
+  }
+  
+  if (!state.api.token) return null;
+  
+  try {
+    const response = await fetch("/api/football-proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        url: "https://api.football-data.org/v4/competitions/WC/standings", 
+        token: state.api.token 
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    standingsCache = data;
+    standingsCacheTime = now;
+    return data;
+  } catch (error) {
+    console.error("Standings fetch error:", error);
+    return null;
+  }
+}
+
+async function renderStandings() {
+  const container = $("#standingsContainer");
+  container.innerHTML = '<div class="standings-loading">Cargando tablas de grupos...</div>';
+  
+  const data = await fetchStandings();
+  
+  if (!data || !data.standings) {
+    container.innerHTML = `
+      <div class="standings-error">
+        <p>No se pudieron cargar las tablas de posiciones.</p>
+        <p>Verifica que el token de API esté configurado en Admin.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const groups = data.standings.filter(s => s.type === "TOTAL");
+  
+  if (groups.length === 0) {
+    container.innerHTML = '<div class="standings-error">No hay datos de grupos disponibles.</div>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="standings-grid">
+      ${groups.map(group => `
+        <div class="group-table">
+          <div class="group-header">
+            <span class="group-name">${group.group?.replace("GROUP_", "Grupo ") || group.stage}</span>
+          </div>
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Equipo</th>
+                <th>PJ</th>
+                <th>G</th>
+                <th>E</th>
+                <th>P</th>
+                <th>GF</th>
+                <th>GC</th>
+                <th>DG</th>
+                <th>Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${group.table.map((team, i) => `
+                <tr class="${i < 2 ? 'qualifies' : ''}">
+                  <td class="pos">${team.position}</td>
+                  <td class="team-cell">
+                    <span class="standings-flag">${flagMarkup(team.team.name, "small")}</span>
+                    <span class="standings-team-name">${teamName(team.team.name)}</span>
+                  </td>
+                  <td>${team.playedGames}</td>
+                  <td>${team.won}</td>
+                  <td>${team.draw}</td>
+                  <td>${team.lost}</td>
+                  <td>${team.goalsFor}</td>
+                  <td>${team.goalsAgainst}</td>
+                  <td class="${team.goalDifference > 0 ? 'positive' : team.goalDifference < 0 ? 'negative' : ''}">${team.goalDifference > 0 ? '+' : ''}${team.goalDifference}</td>
+                  <td class="pts">${team.points}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function rankingMessage() {
   const ranking = getRanking();
   const lines = ranking.slice(0, 10).map(
@@ -1226,7 +1376,7 @@ $("#copyInvite").addEventListener("click", async () => {
 
 window.addEventListener("hashchange", () => {
   const view = window.location.hash.slice(1);
-  if (["inicio", "partidos", "ranking", "admin"].includes(view)) navigate(view);
+  if (["inicio", "partidos", "ranking", "grupos", "admin"].includes(view)) navigate(view);
 });
 
 async function initializeApp() {
@@ -1237,7 +1387,7 @@ async function initializeApp() {
   assignAutomaticPredictions();
   renderAll();
   const initialView = window.location.hash.slice(1);
-  if (["inicio", "partidos", "ranking", "admin"].includes(initialView)) navigate(initialView);
+  if (["inicio", "partidos", "ranking", "grupos", "admin"].includes(initialView)) navigate(initialView);
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
 }
 
@@ -1251,18 +1401,18 @@ setInterval(() => {
     if ($("#partidos").classList.contains("active-view")) renderMatchesPage();
     if ($("#admin").classList.contains("active-view")) renderAdmin();
   }
-  // Siempre actualizar ranking si está visible (para partidos en vivo)
+  // Siempre actualizar ranking si está visible
   if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);
 
-// Auto-refresh más frecuente si hay partidos en vivo
-setInterval(() => {
+// Auto-sync con API cuando hay partidos en vivo (cada 2 minutos)
+setInterval(async () => {
   const today = new Date().toISOString().slice(0, 10);
   const hasLive = state.matches.some((m) => 
     m.kickoff?.slice(0, 10) === today && 
     (m.status === "IN_PLAY" || m.status === "PAUSED")
   );
-  if (hasLive && $("#ranking").classList.contains("active-view")) {
-    renderRanking();
+  if (hasLive) {
+    await silentSync();
   }
-}, 30_000);
+}, 120_000);

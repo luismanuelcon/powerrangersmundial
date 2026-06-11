@@ -2438,3 +2438,173 @@ button {
     font-size: 16px;
   }
 }
+
+/* =====================================================
+   STANDINGS / GRUPOS
+===================================================== */
+
+.standings-container {
+  padding: 0 5vw 60px;
+}
+
+.standings-loading,
+.standings-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+.standings-error p {
+  margin: 8px 0;
+}
+
+.standings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.group-table {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--dark2);
+}
+
+.group-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.03));
+  border-bottom: 1px solid var(--line);
+}
+
+.group-name {
+  font: 16px "Archivo Black", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.standings-table th {
+  padding: 10px 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.standings-table th:nth-child(2) {
+  text-align: left;
+  padding-left: 12px;
+}
+
+.standings-table td {
+  padding: 12px 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.standings-table tr:last-child td {
+  border-bottom: none;
+}
+
+.standings-table tr.qualifies {
+  background: rgba(0, 176, 80, 0.08);
+}
+
+.standings-table tr.qualifies td:first-child {
+  position: relative;
+}
+
+.standings-table tr.qualifies td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--green);
+}
+
+.standings-table .pos {
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.standings-table .team-cell {
+  text-align: left;
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standings-flag {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.standings-flag img {
+  width: 18px;
+  height: auto;
+  border-radius: 2px;
+}
+
+.standings-team-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.standings-table .pts {
+  font: 14px "Archivo Black", sans-serif;
+  color: var(--gold);
+}
+
+.standings-table .positive {
+  color: var(--green);
+}
+
+.standings-table .negative {
+  color: var(--red);
+}
+
+@media (max-width: 760px) {
+  .standings-container {
+    padding: 0 14px 80px;
+  }
+  
+  .standings-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .standings-table {
+    font-size: 11px;
+  }
+  
+  .standings-team-name {
+    max-width: 90px;
+  }
+  
+  /* Ocultar columnas menos importantes en móvil */
+  .standings-table th:nth-child(6),
+  .standings-table td:nth-child(6),
+  .standings-table th:nth-child(7),
+  .standings-table td:nth-child(7),
+  .standings-table th:nth-child(8),
+  .standings-table td:nth-child(8) {
+    display: none;
+  }
+}
