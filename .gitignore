@@ -1,0 +1,19 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Runtime and local configuration
+.env
+.env.*
+!.env.example
+users.local.js
+node_modules/
+npm-debug.log*
+
+# Temporary files
+*.log
+*.tmp
+coverage/
+dist/

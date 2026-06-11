@@ -1,0 +1,13 @@
+{
+  "name": "power-rangers-mundial",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "migrate": "node scripts/migrate.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

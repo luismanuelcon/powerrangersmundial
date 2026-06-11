@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Power Rangers Mundial: la polla mundialista para competir con amigos."
+    />
+    <title>Power Rangers Mundial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="Power Rangers Mundial, inicio">
+        <img class="brand-logo" src="assets/logo-power-rangers-mundial.png" alt="" />
+        <span>
+          <strong>POWER RANGERS</strong>
+          <small>MUNDIAL</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Navegación principal">
+        <button class="nav-link active" data-view="inicio">Inicio</button>
+        <button class="nav-link" data-view="partidos">Pronósticos</button>
+        <button class="nav-link" data-view="ranking">Ranking</button>
+        <button class="nav-link admin-only hidden" data-view="admin">Administrar</button>
+      </nav>
+      <div class="header-actions">
+        <button id="shareHeader" class="icon-button" aria-label="Compartir ranking">
+          ↗
+        </button>
+        <button id="profileButton" class="profile-button">
+          <span id="profileInitial">?</span>
+          <span id="profileName">Entrar</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section id="inicio" class="view active-view">
+        <div class="hero">
+          <div class="hero-overlay" aria-hidden="true"></div>
+          <div class="hero-copy">
+            <span class="hero-badge">⚽ MUNDIAL 2026</span>
+            <h1>Power Rangers<br /><em>Mundial</em></h1>
+            <p>
+              Demuestra tus poderes de predicción. Compite con amigos,
+              acumula puntos y conviértete en el Ranger Supremo del Mundial.
+            </p>
+            <div class="hero-actions">
+              <button class="primary-button" data-go="partidos">
+                Hacer pronósticos <span>→</span>
+              </button>
+              <button class="text-button" data-go="ranking">
+                Ver ranking
+              </button>
+            </div>
+            <div class="hero-stats">
+              <div><strong id="heroPlayers">1</strong><span>Jugadores</span></div>
+              <div><strong id="heroMatches">6</strong><span>Partidos</span></div>
+              <div><strong>2 PTS</strong><span>Por exacto</span></div>
+            </div>
+          </div>
+          <div class="hero-card">
+            <div class="energy-circle">
+              <div class="energy-ring ring-one"></div>
+              <div class="energy-ring ring-two"></div>
+              <img src="assets/logo-power-rangers-mundial.png" alt="Power Rangers Mundial" />
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-strip">
+          <article>
+            <span class="stat-label">TU POSICIÓN</span>
+            <strong id="homePosition">—</strong>
+            <small id="homePositionDetail">Ingresa para competir</small>
+          </article>
+          <article>
+            <span class="stat-label">TUS PUNTOS</span>
+            <strong id="homePoints">0</strong>
+            <small><span class="dot exact"></span> 2 exacto · 1 resultado</small>
+          </article>
+          <article>
+            <span class="stat-label">PRÓXIMO CIERRE</span>
+            <strong id="homeCountdown">—</strong>
+            <small id="homeNextMatch">Cargando partidos</small>
+          </article>
+          <article class="strip-action">
+            <button data-go="partidos">Completar polla <span>→</span></button>
+          </article>
+        </div>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">EN JUEGO</span>
+              <h2>Próximos partidos</h2>
+            </div>
+            <button class="text-button" data-go="partidos">Ver todos →</button>
+          </div>
+          <div id="homeMatches" class="match-grid"></div>
+        </section>
+
+        <section class="rules-banner">
+          <div>
+            <span class="eyebrow light">REGLAS RÁPIDAS</span>
+            <h2>Simple de jugar.<br />Difícil de ganar.</h2>
+          </div>
+          <div class="rule">
+            <span>02</span>
+            <div><strong>Marcador exacto</strong><small>Dos puntos</small></div>
+          </div>
+          <div class="rule">
+            <span>01</span>
+            <div><strong>Ganador o empate</strong><small>Un punto</small></div>
+          </div>
+          <div class="rule">
+            <span>00</span>
+            <div><strong>Resultado distinto</strong><small>La próxima será</small></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="partidos" class="view">
+        <div class="page-heading">
+          <span class="eyebrow">TUS PRONÓSTICOS</span>
+          <h1>Partido a partido</h1>
+          <p>Los marcadores se cierran 30 minutos antes. Si no pronosticas, se asigna 0-0.</p>
+        </div>
+        <div class="toolbar">
+          <div id="stageFilters" class="filter-tabs"></div>
+          <label class="search-field">
+            <span>⌕</span>
+            <input id="matchSearch" type="search" placeholder="Buscar selección" />
+          </label>
+        </div>
+        <div id="matchesList" class="matches-list"></div>
+      </section>
+
+      <section id="ranking" class="view">
+        <div class="page-heading ranking-heading">
+          <div>
+            <span class="eyebrow">TABLA GENERAL</span>
+            <h1>¿Quién manda aquí?</h1>
+            <p>En empate, gana quien tenga más exactos y luego quien pronosticó primero.</p>
+          </div>
+          <button id="shareRanking" class="whatsapp-button">
+            <span>◉</span> Compartir en WhatsApp
+          </button>
+        </div>
+        <div class="ranking-layout">
+          <div id="podium" class="podium"></div>
+          <div class="ranking-table-wrap">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th>Pos.</th>
+                  <th>Participante</th>
+                  <th>Exactos</th>
+                  <th>Aciertos</th>
+                  <th>Puntos</th>
+                </tr>
+              </thead>
+              <tbody id="rankingBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="admin" class="view">
+        <div class="page-heading">
+          <span class="eyebrow">PANEL PRIVADO</span>
+          <h1>Centro de control</h1>
+          <p>Gestiona resultados, partidos, participantes y sincronización.</p>
+        </div>
+        <div id="adminStats" class="admin-stats"></div>
+        <div class="admin-grid">
+          <article class="admin-card">
+            <div class="card-heading">
+              <div><span class="eyebrow">RESULTADOS</span><h2>Actualizar partidos</h2></div>
+              <button id="syncResults" class="small-button">Sincronizar API</button>
+            </div>
+            <div id="adminMatches" class="admin-match-list"></div>
+          </article>
+          <article class="admin-card">
+            <span class="eyebrow">CONFIGURACIÓN</span>
+            <h2>Fuente de resultados</h2>
+            <form id="apiForm" class="stack-form">
+              <label>URL de la API
+                <input id="apiUrl" type="url" placeholder="https://api.football-data.org/v4/competitions/WC/matches" />
+              </label>
+              <label>Token de acceso
+                <input id="apiToken" type="password" placeholder="X-Auth-Token" />
+              </label>
+              <button class="primary-button" type="submit">Guardar configuración</button>
+            </form>
+            <p class="form-note">
+              Compatible con Football-Data.org. La clave queda guardada solo en este navegador.
+            </p>
+          </article>
+          <article class="admin-card">
+            <div class="card-heading users-heading">
+              <div>
+                <span class="eyebrow">USUARIOS AUTORIZADOS</span>
+                <h2>Administración de usuarios</h2>
+              </div>
+              <button id="addUserButton" class="small-button" type="button">+ Agregar usuario</button>
+            </div>
+            <p class="form-note">Información visible únicamente para el administrador.</p>
+            <div id="participantsList" class="participants-list"></div>
+          </article>
+          <article class="admin-card invite-card">
+            <span class="eyebrow light">GRUPO CERRADO</span>
+            <h2>Acceso privado</h2>
+            <p>Solo las personas autorizadas pueden entrar usando su celular y cédula.</p>
+            <button id="copyInvite" class="light-button">Copiar enlace de acceso</button>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Navegación móvil">
+      <button class="mobile-link active" data-view="inicio"><span>⌂</span>Inicio</button>
+      <button class="mobile-link" data-view="partidos"><span>▦</span>Pronósticos</button>
+      <button class="mobile-link" data-view="ranking"><span>♛</span>Ranking</button>
+      <button class="mobile-link admin-only hidden" data-view="admin"><span>⚙</span>Admin</button>
+    </nav>
+
+    <dialog id="authDialog">
+      <button class="dialog-close" data-close aria-label="Cerrar">×</button>
+      <div class="dialog-brand">PR</div>
+      <span class="eyebrow">ACCESO PRIVADO</span>
+      <h2>Entra a competir</h2>
+      <p>Ingresa el celular registrado y usa tu cédula como clave.</p>
+      <form id="authForm" class="stack-form">
+        <label>Número de celular
+          <input id="authPhone" required type="tel" inputmode="numeric" autocomplete="tel" minlength="10" maxlength="10" pattern="[0-9]{10}" placeholder="3001234567" />
+        </label>
+        <label>Clave
+          <input id="authDocument" required type="password" inputmode="numeric" autocomplete="current-password" minlength="6" maxlength="10" pattern="[0-9]{6,10}" placeholder="Tu número de cédula" />
+        </label>
+        <button class="primary-button" type="submit">Entrar a la polla</button>
+      </form>
+    </dialog>
+
+    <dialog id="userDialog">
+      <button class="dialog-close" data-close aria-label="Cerrar">×</button>
+      <div class="dialog-brand">PR</div>
+      <span class="eyebrow">ADMINISTRACIÓN</span>
+      <h2 id="userDialogTitle">Agregar usuario</h2>
+      <p>El apodo será el nombre público que aparecerá en la polla.</p>
+      <form id="userForm" class="stack-form">
+        <input id="userId" type="hidden" />
+        <label>Nombre completo
+          <input id="userFullName" required autocomplete="off" placeholder="Nombre y apellidos" />
+        </label>
+        <label>Apodo
+          <input id="userNickname" required autocomplete="off" maxlength="24" placeholder="Nombre visible" />
+        </label>
+        <label>Número de celular
+          <input id="userPhone" required type="tel" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" placeholder="3001234567" />
+        </label>
+        <label>Cédula / clave
+          <input id="userDocument" required type="text" inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" placeholder="Número de cédula" />
+        </label>
+        <button class="primary-button" type="submit">Guardar usuario</button>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="fixtures.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
