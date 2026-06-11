@@ -1105,7 +1105,12 @@ async function syncApi() {
         // Actualizar partido existente (mantener ID local)
         // Solo actualizar scores si la API devuelve valores válidos (no null)
         const hasValidScores = apiMatch.homeScore != null && apiMatch.awayScore != null;
-        existingMatch.status = apiMatch.status;
+        // Proteger status local: no sobrescribir FINISHED con SCHEDULED/TIMED
+        const localIsFinished = existingMatch.status === "FINISHED";
+        const apiIsLessAdvanced = ["SCHEDULED", "TIMED"].includes(apiMatch.status);
+        if (!localIsFinished || !apiIsLessAdvanced) {
+          existingMatch.status = apiMatch.status;
+        }
         if (hasValidScores) {
           existingMatch.homeScore = apiMatch.homeScore;
           existingMatch.awayScore = apiMatch.awayScore;
@@ -1171,17 +1176,25 @@ async function silentSync() {
         const newAwayScore = apiMatch.awayScore;
         const hasValidScores = newHomeScore != null && newAwayScore != null;
         
+        // Proteger status local: no sobrescribir FINISHED con SCHEDULED/TIMED
+        const localIsFinished = existingMatch.status === "FINISHED";
+        const apiIsLessAdvanced = ["SCHEDULED", "TIMED"].includes(apiMatch.status);
+        const shouldUpdateStatus = !localIsFinished || !apiIsLessAdvanced;
+        
         // Detectar cambios relevantes
-        const statusChanged = existingMatch.status !== apiMatch.status;
+        const statusChanged = shouldUpdateStatus && existingMatch.status !== apiMatch.status;
         const scoresChanged = hasValidScores && (
           existingMatch.homeScore !== newHomeScore || existingMatch.awayScore !== newAwayScore
         );
         
         if (statusChanged || scoresChanged) {
           console.log("silentSync: actualizando partido", apiMatch.home, "vs", apiMatch.away, 
-            "status:", apiMatch.status, "score:", newHomeScore, "-", newAwayScore,
-            "(válidos:", hasValidScores, ")");
-          existingMatch.status = apiMatch.status;
+            "status:", existingMatch.status, "->", apiMatch.status, "(actualizar:", shouldUpdateStatus, ")",
+            "score:", newHomeScore, "-", newAwayScore, "(válidos:", hasValidScores, ")");
+          // Solo actualizar status si no estamos degradando de FINISHED
+          if (shouldUpdateStatus) {
+            existingMatch.status = apiMatch.status;
+          }
           // Solo actualizar scores si son válidos (proteger datos locales)
           if (hasValidScores) {
             existingMatch.homeScore = newHomeScore;
