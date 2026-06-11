@@ -244,7 +244,7 @@ const teamNamesEs = {
   Croatia: "Croacia",
   Curaçao: "Curazao",
   Czechia: "Chequia",
-  "Czech Republic": "República Checa",
+  "Czech Republic": "Chequia",
   "DR Congo": "R. D. del Congo",
   Ecuador: "Ecuador",
   Egypt: "Egipto",
@@ -298,6 +298,9 @@ function normalizeCountryName(name) {
   const aliases = {
     "bosniaherzegovina": "bosnia and herzegovina",
     "bosnia herzegowina": "bosnia and herzegovina",
+    "czechia": "czech republic",
+    "chequia": "czech republic",
+    "republica checa": "czech republic",
     "korea republic": "south korea",
     "republic of korea": "south korea",
     "usa": "united states",
@@ -1091,6 +1094,28 @@ function normalizeApiMatches(data) {
   }).filter((match) => match.home && match.away && match.kickoff);
 }
 
+function updateMatchFromApi(existingMatch, apiMatch) {
+  if (existingMatch.status === "FINISHED") return false;
+
+  const hasValidScores = apiMatch.homeScore != null && apiMatch.awayScore != null;
+  const statusChanged = existingMatch.status !== apiMatch.status;
+  const scoresChanged = hasValidScores && (
+    existingMatch.homeScore !== apiMatch.homeScore ||
+    existingMatch.awayScore !== apiMatch.awayScore
+  );
+  const kickoffChanged = Boolean(apiMatch.kickoff) && existingMatch.kickoff !== apiMatch.kickoff;
+
+  if (!statusChanged && !scoresChanged && !kickoffChanged) return false;
+
+  existingMatch.status = apiMatch.status;
+  if (hasValidScores) {
+    existingMatch.homeScore = apiMatch.homeScore;
+    existingMatch.awayScore = apiMatch.awayScore;
+  }
+  if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
+  return true;
+}
+
 async function syncApi() {
   if (!state.api.url) {
     showToast("Configura primero la URL de la API.");
@@ -1136,20 +1161,11 @@ async function syncApi() {
       });
       
       if (existingMatch) {
-        // Si el partido está FINISHED localmente, NO actualizar nada desde la API
         if (existingMatch.status === "FINISHED") {
           console.log("syncApi: partido FINISHED, ignorando API", apiMatch.home, "vs", apiMatch.away);
-          return; // Siguiente partido
+          return;
         }
-        // Actualizar partido existente (mantener ID local)
-        const hasValidScores = apiMatch.homeScore != null && apiMatch.awayScore != null;
-        existingMatch.status = apiMatch.status;
-        if (hasValidScores) {
-          existingMatch.homeScore = apiMatch.homeScore;
-          existingMatch.awayScore = apiMatch.awayScore;
-        }
-        if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
-        updatedCount++;
+        if (updateMatchFromApi(existingMatch, apiMatch)) updatedCount++;
       }
     });
     
@@ -1204,31 +1220,16 @@ async function silentSync() {
         return localHome === apiHome && localAway === apiAway;
       });
       if (existingMatch) {
-        // Si el partido está FINISHED localmente, NO actualizar nada desde la API
         if (existingMatch.status === "FINISHED") {
           console.log("silentSync: partido FINISHED, ignorando API", apiMatch.home, "vs", apiMatch.away);
-          return; // Siguiente partido
+          return;
         }
-        
-        const newHomeScore = apiMatch.homeScore;
-        const newAwayScore = apiMatch.awayScore;
-        const hasValidScores = newHomeScore != null && newAwayScore != null;
-        
-        // Detectar cambios relevantes
-        const statusChanged = existingMatch.status !== apiMatch.status;
-        const scoresChanged = hasValidScores && (
-          existingMatch.homeScore !== newHomeScore || existingMatch.awayScore !== newAwayScore
-        );
-        
-        if (statusChanged || scoresChanged) {
+
+        const previousStatus = existingMatch.status;
+        if (updateMatchFromApi(existingMatch, apiMatch)) {
           console.log("silentSync: actualizando partido", apiMatch.home, "vs", apiMatch.away, 
-            "status:", existingMatch.status, "->", apiMatch.status,
-            "score:", newHomeScore, "-", newAwayScore);
-          existingMatch.status = apiMatch.status;
-          if (hasValidScores) {
-            existingMatch.homeScore = newHomeScore;
-            existingMatch.awayScore = newAwayScore;
-          }
+            "status:", previousStatus, "->", apiMatch.status,
+            "score:", apiMatch.homeScore, "-", apiMatch.awayScore);
           changed = true;
         }
       } else {
