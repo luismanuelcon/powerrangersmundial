@@ -275,6 +275,16 @@
       </form>
     </dialog>
 
+    <dialog id="predictionsDialog">
+      <button class="dialog-close" data-close aria-label="Cerrar">×</button>
+      <div class="predictions-header">
+        <span class="eyebrow">PREDICCIONES</span>
+        <h2 id="predictionsMatchTitle">Partido</h2>
+        <div id="predictionsMatchInfo" class="predictions-match-info"></div>
+      </div>
+      <div id="predictionsContent" class="predictions-list"></div>
+    </dialog>
+
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="fixtures.js"></script>
     <script src="app.js"></script>

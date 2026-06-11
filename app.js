@@ -483,6 +483,7 @@ function matchCard(match) {
               ? "Pronóstico bloqueado"
               : "Ingresa ambos marcadores"
       }</div>
+      ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}">👁️ Ver predicciones</button>` : ""}
     </article>
   `;
 }
@@ -666,6 +667,64 @@ function bindScoreInputs() {
       }
     });
   });
+
+  // Vincular botones de ver predicciones
+  $$("[data-view-predictions]").forEach((button) => {
+    button.addEventListener("click", () => openPredictionsDialog(button.dataset.viewPredictions));
+  });
+}
+
+function openPredictionsDialog(matchId) {
+  const match = state.matches.find((item) => item.id === matchId);
+  if (!match || !isLocked(match)) return;
+
+  $("#predictionsMatchTitle").textContent = `${teamName(match.home)} vs ${teamName(match.away)}`;
+  
+  const resultInfo = match.status === "FINISHED" 
+    ? `<div class="result-final">Resultado final: <strong>${match.homeScore} – ${match.awayScore}</strong></div>`
+    : `<div class="result-pending">Partido en curso o por jugarse</div>`;
+  
+  $("#predictionsMatchInfo").innerHTML = `
+    <div class="match-datetime">${formatDate(match.kickoff, { weekday: "long", day: "numeric", month: "long" })} · ${formatKickoff(match.kickoff)}</div>
+    ${resultInfo}
+  `;
+
+  const predictionsHtml = state.participants
+    .map((person) => {
+      const prediction = predictionFor(person.id, matchId);
+      const predText = prediction ? `${prediction.home} – ${prediction.away}` : "Sin predicción";
+      
+      let pointsEarned = "";
+      if (match.status === "FINISHED" && prediction) {
+        if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
+          pointsEarned = '<span class="points-badge exact">+2 Exacto</span>';
+        } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
+          pointsEarned = '<span class="points-badge correct">+1 Acierto</span>';
+        } else {
+          pointsEarned = '<span class="points-badge wrong">0</span>';
+        }
+      }
+
+      const isAutomatic = prediction?.automatic ? '<span class="auto-badge">Auto</span>' : "";
+
+      return `
+        <div class="prediction-item ${person.id === state.currentUserId ? 'current-user' : ''}">
+          <div class="prediction-user">
+            <span class="pred-avatar">${initials(displayName(person))}</span>
+            <span class="pred-name">${escapeHtml(displayName(person))}</span>
+            ${isAutomatic}
+          </div>
+          <div class="prediction-score">
+            <span class="pred-result">${predText}</span>
+            ${pointsEarned}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  $("#predictionsContent").innerHTML = predictionsHtml;
+  $("#predictionsDialog").showModal();
 }
 
 function renderRanking() {
