@@ -767,6 +767,54 @@ function renderRanking() {
   assignAutomaticPredictions();
   const ranking = getRanking();
   const podiumClasses = ["first", "second", "third"];
+  
+  // Partidos del día
+  const today = new Date().toISOString().slice(0, 10);
+  const todayMatches = state.matches
+    .filter((m) => m.kickoff?.slice(0, 10) === today)
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  
+  if (todayMatches.length > 0) {
+    const hasLiveMatches = todayMatches.some((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
+    $("#todayMatches").innerHTML = `
+      <div class="today-matches-header">
+        <span class="today-icon">${hasLiveMatches ? "🔴" : "📅"}</span>
+        <span class="today-title">Partidos de hoy</span>
+        ${hasLiveMatches ? '<span class="live-indicator">EN VIVO</span>' : ""}
+      </div>
+      <div class="today-matches-grid">
+        ${todayMatches.map((match) => {
+          const statusClass = match.status === "IN_PLAY" || match.status === "PAUSED" ? "live" : 
+                              match.status === "FINISHED" ? "finished" : "scheduled";
+          const scoreText = match.homeScore != null && match.awayScore != null 
+            ? `${match.homeScore} - ${match.awayScore}` 
+            : formatKickoff(match.kickoff);
+          const statusText = match.status === "IN_PLAY" ? "En juego" :
+                             match.status === "PAUSED" ? "Descanso" :
+                             match.status === "FINISHED" ? "Final" : "";
+          return `
+            <div class="today-match ${statusClass}">
+              <div class="today-teams">
+                <div class="today-team">
+                  <span class="today-flag">${flagMarkup(match.home, "small")}</span>
+                  <span>${teamName(match.home)}</span>
+                </div>
+                <div class="today-score">${scoreText}</div>
+                <div class="today-team">
+                  <span>${teamName(match.away)}</span>
+                  <span class="today-flag">${flagMarkup(match.away, "small")}</span>
+                </div>
+              </div>
+              ${statusText ? `<span class="today-status">${statusText}</span>` : ""}
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } else {
+    $("#todayMatches").innerHTML = "";
+  }
+  
   $("#podium").innerHTML = ranking
     .slice(0, 3)
     .map(
@@ -803,12 +851,10 @@ function renderRanking() {
   if (ranking.length > 0) {
     const lastPerson = ranking[ranking.length - 1];
     const dayStats = calculateDayStats(lastPerson);
-    const todayMatches = state.matches.filter((m) => {
-      const matchDate = m.kickoff?.slice(0, 10);
-      const today = new Date().toISOString().slice(0, 10);
-      return matchDate === today && (m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED");
-    });
-    const isPartial = todayMatches.some((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
+    const matchesWithResults = todayMatches.filter((m) => 
+      m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED"
+    );
+    const isPartial = matchesWithResults.some((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
     
     $("#lastPlace").innerHTML = `
       <div class="last-place-header">
@@ -1196,12 +1242,27 @@ async function initializeApp() {
 }
 
 initializeApp();
+
+// Auto-refresh cada minuto
 setInterval(() => {
   const changed = assignAutomaticPredictions();
   renderHome();
   if (changed) {
     if ($("#partidos").classList.contains("active-view")) renderMatchesPage();
-    if ($("#ranking").classList.contains("active-view")) renderRanking();
     if ($("#admin").classList.contains("active-view")) renderAdmin();
   }
+  // Siempre actualizar ranking si está visible (para partidos en vivo)
+  if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);
+
+// Auto-refresh más frecuente si hay partidos en vivo
+setInterval(() => {
+  const today = new Date().toISOString().slice(0, 10);
+  const hasLive = state.matches.some((m) => 
+    m.kickoff?.slice(0, 10) === today && 
+    (m.status === "IN_PLAY" || m.status === "PAUSED")
+  );
+  if (hasLive && $("#ranking").classList.contains("active-view")) {
+    renderRanking();
+  }
+}, 30_000);

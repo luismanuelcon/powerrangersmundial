@@ -1051,6 +1051,141 @@ main {
   font: 20px "Archivo Black", sans-serif;
 }
 
+/* Today Matches Section */
+.today-matches-section {
+  margin: 0 5vw 24px;
+  padding: 20px 24px;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.06), rgba(255, 193, 7, 0.02));
+}
+
+.today-matches-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 193, 7, 0.15);
+}
+
+.today-icon {
+  font-size: 18px;
+}
+
+.today-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+
+.live-indicator {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.today-matches-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.today-match {
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.today-match.live {
+  border-color: var(--red);
+  background: rgba(255, 26, 26, 0.08);
+}
+
+.today-match.finished {
+  border-color: var(--green);
+  background: rgba(0, 176, 80, 0.08);
+}
+
+.today-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.today-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.today-team:last-child {
+  justify-content: flex-end;
+}
+
+.today-flag {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.today-flag img {
+  width: 20px;
+  height: auto;
+  border-radius: 2px;
+}
+
+.today-score {
+  font: 20px "Archivo Black", sans-serif;
+  text-align: center;
+  min-width: 70px;
+  color: var(--white);
+}
+
+.today-match.live .today-score {
+  color: var(--gold);
+}
+
+.today-match.finished .today-score {
+  color: var(--green);
+}
+
+.today-status {
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.today-match.live .today-status {
+  color: var(--red);
+}
+
+.today-match.finished .today-status {
+  color: var(--green);
+}
+
 /* Last Place Card */
 .last-place-card {
   margin-top: 24px;
@@ -1644,6 +1779,26 @@ dialog > p {
   .last-place-day {
     width: 100%;
     text-align: center;
+  }
+  .today-matches-section {
+    margin: 0 14px 20px;
+    padding: 16px;
+  }
+  .today-teams {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+  .today-team {
+    justify-content: center;
+  }
+  .today-team:last-child {
+    justify-content: center;
+    flex-direction: row-reverse;
+  }
+  .today-score {
+    font-size: 24px;
+    padding: 8px 0;
   }
 }
 
