@@ -1103,9 +1103,13 @@ async function syncApi() {
       
       if (existingMatch) {
         // Actualizar partido existente (mantener ID local)
+        // Solo actualizar scores si la API devuelve valores válidos (no null)
+        const hasValidScores = apiMatch.homeScore != null && apiMatch.awayScore != null;
         existingMatch.status = apiMatch.status;
-        existingMatch.homeScore = apiMatch.homeScore;
-        existingMatch.awayScore = apiMatch.awayScore;
+        if (hasValidScores) {
+          existingMatch.homeScore = apiMatch.homeScore;
+          existingMatch.awayScore = apiMatch.awayScore;
+        }
         if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
         updatedCount++;
       }
@@ -1162,14 +1166,27 @@ async function silentSync() {
         return localHome === apiHome && localAway === apiAway;
       });
       if (existingMatch) {
-        if (existingMatch.status !== apiMatch.status ||
-            existingMatch.homeScore !== apiMatch.homeScore ||
-            existingMatch.awayScore !== apiMatch.awayScore) {
+        // Solo actualizar scores si la API devuelve valores válidos (no null)
+        const newHomeScore = apiMatch.homeScore;
+        const newAwayScore = apiMatch.awayScore;
+        const hasValidScores = newHomeScore != null && newAwayScore != null;
+        
+        // Detectar cambios relevantes
+        const statusChanged = existingMatch.status !== apiMatch.status;
+        const scoresChanged = hasValidScores && (
+          existingMatch.homeScore !== newHomeScore || existingMatch.awayScore !== newAwayScore
+        );
+        
+        if (statusChanged || scoresChanged) {
           console.log("silentSync: actualizando partido", apiMatch.home, "vs", apiMatch.away, 
-            "status:", apiMatch.status, "score:", apiMatch.homeScore, "-", apiMatch.awayScore);
+            "status:", apiMatch.status, "score:", newHomeScore, "-", newAwayScore,
+            "(válidos:", hasValidScores, ")");
           existingMatch.status = apiMatch.status;
-          existingMatch.homeScore = apiMatch.homeScore;
-          existingMatch.awayScore = apiMatch.awayScore;
+          // Solo actualizar scores si son válidos (proteger datos locales)
+          if (hasValidScores) {
+            existingMatch.homeScore = newHomeScore;
+            existingMatch.awayScore = newAwayScore;
+          }
           changed = true;
         }
       } else {
@@ -1456,7 +1473,7 @@ setInterval(() => {
   if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);
 
-// Auto-sync con API si hay partidos hoy (cada 2 minutos)
+// Auto-sync con API si hay partidos hoy (cada 30 minutos para evitar datos incompletos)
 setInterval(async () => {
   const today = new Date().toISOString().slice(0, 10);
   const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
@@ -1464,4 +1481,4 @@ setInterval(async () => {
     console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
   }
-}, 120_000);
+}, 1_800_000); // 30 minutos
