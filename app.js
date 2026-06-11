@@ -1109,16 +1109,28 @@ async function syncApi() {
 
 // Sincronización silenciosa para auto-refresh
 async function silentSync() {
-  if (!state.api.url || !state.api.token) return;
+  console.log("silentSync: iniciando...", { url: state.api.url, hasToken: !!state.api.token });
+  if (!state.api.url || !state.api.token) {
+    console.log("silentSync: falta URL o token");
+    return;
+  }
   try {
     const response = await fetch("/api/football-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: state.api.url, token: state.api.token }),
     });
-    if (!response.ok) return;
-    const imported = normalizeApiMatches(await response.json());
-    if (!imported.length) return;
+    if (!response.ok) {
+      console.log("silentSync: respuesta no OK", response.status);
+      return;
+    }
+    const data = await response.json();
+    console.log("silentSync: datos recibidos", data?.matches?.length || 0, "partidos");
+    const imported = normalizeApiMatches(data);
+    if (!imported.length) {
+      console.log("silentSync: no se importaron partidos");
+      return;
+    }
 
     let changed = false;
     imported.forEach((apiMatch) => {
@@ -1133,14 +1145,19 @@ async function silentSync() {
         if (existingMatch.status !== apiMatch.status ||
             existingMatch.homeScore !== apiMatch.homeScore ||
             existingMatch.awayScore !== apiMatch.awayScore) {
+          console.log("silentSync: actualizando partido", apiMatch.home, "vs", apiMatch.away, 
+            "status:", apiMatch.status, "score:", apiMatch.homeScore, "-", apiMatch.awayScore);
           existingMatch.status = apiMatch.status;
           existingMatch.homeScore = apiMatch.homeScore;
           existingMatch.awayScore = apiMatch.awayScore;
           changed = true;
         }
+      } else {
+        console.log("silentSync: partido no encontrado localmente", apiMatch.home, "vs", apiMatch.away);
       }
     });
     
+    console.log("silentSync: cambios detectados:", changed);
     if (changed) {
       saveState();
       renderAll();
@@ -1389,6 +1406,13 @@ async function initializeApp() {
   const initialView = window.location.hash.slice(1);
   if (["inicio", "partidos", "ranking", "grupos", "admin"].includes(initialView)) navigate(initialView);
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
+  
+  // Sync inicial si hay token y partidos hoy
+  const today = new Date().toISOString().slice(0, 10);
+  const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
+  if (hasTodayMatches && state.api.token) {
+    setTimeout(() => silentSync(), 2000);
+  }
 }
 
 initializeApp();
@@ -1405,14 +1429,12 @@ setInterval(() => {
   if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);
 
-// Auto-sync con API cuando hay partidos en vivo (cada 2 minutos)
+// Auto-sync con API si hay partidos hoy (cada 2 minutos)
 setInterval(async () => {
   const today = new Date().toISOString().slice(0, 10);
-  const hasLive = state.matches.some((m) => 
-    m.kickoff?.slice(0, 10) === today && 
-    (m.status === "IN_PLAY" || m.status === "PAUSED")
-  );
-  if (hasLive) {
+  const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
+  if (hasTodayMatches && state.api.token) {
+    console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
   }
 }, 120_000);
