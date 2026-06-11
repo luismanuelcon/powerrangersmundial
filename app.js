@@ -953,18 +953,33 @@ async function syncApi() {
     const imported = normalizeApiMatches(await response.json());
     if (!imported.length) throw new Error("La API no devolvió partidos reconocibles");
 
-    const predictionIds = new Set(
-      Object.values(state.predictions).flatMap((predictions) => Object.keys(predictions)),
-    );
-    const existingById = new Map(state.matches.map((match) => [match.id, match]));
-    imported.forEach((match) => existingById.set(match.id, { ...existingById.get(match.id), ...match }));
-    state.matches = [...existingById.values()].filter(
-      (match) => imported.some((item) => item.id === match.id) || predictionIds.has(match.id),
-    );
+    // Hacer match por equipos (normalizado) en lugar de por ID
+    let updatedCount = 0;
+    imported.forEach((apiMatch) => {
+      const apiHome = normalizeCountryName(apiMatch.home);
+      const apiAway = normalizeCountryName(apiMatch.away);
+      
+      // Buscar partido existente con mismos equipos
+      const existingMatch = state.matches.find((local) => {
+        const localHome = normalizeCountryName(local.home);
+        const localAway = normalizeCountryName(local.away);
+        return localHome === apiHome && localAway === apiAway;
+      });
+      
+      if (existingMatch) {
+        // Actualizar partido existente (mantener ID local)
+        existingMatch.status = apiMatch.status;
+        existingMatch.homeScore = apiMatch.homeScore;
+        existingMatch.awayScore = apiMatch.awayScore;
+        if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
+        updatedCount++;
+      }
+    });
+    
     saveState();
     renderAll();
     navigate("admin");
-    showToast(`${imported.length} partidos sincronizados`);
+    showToast(`${updatedCount} partidos actualizados`);
   } catch (error) {
     console.error(error);
     showToast(`No fue posible sincronizar: ${error.message}`);
