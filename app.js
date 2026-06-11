@@ -943,8 +943,12 @@ async function syncApi() {
   button.disabled = true;
   button.textContent = "Sincronizando…";
   try {
-    const headers = state.api.token ? { "X-Auth-Token": state.api.token } : {};
-    const response = await fetch(state.api.url, { headers });
+    // Usar proxy del servidor para evitar CORS
+    const response = await fetch("/api/football-proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: state.api.url, token: state.api.token }),
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const imported = normalizeApiMatches(await response.json());
     if (!imported.length) throw new Error("La API no devolvió partidos reconocibles");

@@ -270,6 +270,28 @@ async function handleApi(request, response, pathname) {
     return;
   }
 
+  // Proxy para football-data.org (evita CORS)
+  if (request.method === "POST" && pathname === "/api/football-proxy") {
+    const body = await readJson(request);
+    const apiUrl = body.url || "https://api.football-data.org/v4/competitions/WC/matches";
+    const apiToken = body.token || "";
+    
+    try {
+      const fetchResponse = await fetch(apiUrl, {
+        headers: apiToken ? { "X-Auth-Token": apiToken } : {},
+      });
+      if (!fetchResponse.ok) {
+        sendJson(response, fetchResponse.status, { error: `API error: ${fetchResponse.status}` });
+        return;
+      }
+      const data = await fetchResponse.json();
+      sendJson(response, 200, data);
+    } catch (err) {
+      sendJson(response, 500, { error: `Fetch error: ${err.message}` });
+    }
+    return;
+  }
+
   sendJson(response, 404, { error: "API no encontrada" });
 }
 
