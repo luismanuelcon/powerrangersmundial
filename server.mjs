@@ -15,6 +15,7 @@ import {
 const port = Number(process.env.PORT || 4200);
 const root = process.cwd();
 const secret = process.env.SESSION_SECRET;
+const defaultApiUrl = "https://api.football-data.org/v4/competitions/WC/matches";
 const blockedPaths = new Set([
   ".env.local",
   "users.local.js",
@@ -110,6 +111,34 @@ function privateUser(row) {
   }
 }
 
+async function apiConfig() {
+  const { rows } = await pool.query(
+    "select key, value_cipher from prm_settings where key in ('api_url', 'api_token')",
+  );
+  const settings = Object.fromEntries(rows.map((row) => [row.key, decrypt(row.value_cipher, secret)]));
+  return {
+    url: settings.api_url || defaultApiUrl,
+    token: settings.api_token || "",
+  };
+}
+
+async function saveApiConfig(url, token) {
+  const values = [["api_url", url]];
+  if (token) values.push(["api_token", token]);
+  for (const [key, value] of values) {
+    await pool.query(
+      `
+        insert into prm_settings (key, value_cipher, updated_at)
+        values ($1, $2, now())
+        on conflict (key) do update set
+          value_cipher = excluded.value_cipher,
+          updated_at = now()
+      `,
+      [key, encrypt(value, secret)],
+    );
+  }
+}
+
 async function authenticatedUser(request) {
   const token = cookies(request).prm_session;
   if (!token) return null;
@@ -181,11 +210,16 @@ async function handleApi(request, response, pathname) {
     const results = await pool.query(
       "select match_id, home_score, away_score, status from prm_match_results",
     );
+    const config = await apiConfig();
     sendJson(response, 200, {
       user: publicUser(user),
       participants: rows.map(publicUser),
       predictions: predictions.rows,
       results: results.rows,
+      api: {
+        url: config.url,
+        tokenConfigured: Boolean(config.token),
+      },
     });
     return;
   }
@@ -215,6 +249,32 @@ async function handleApi(request, response, pathname) {
     return;
   }
 
+  if (request.method === "POST" && pathname === "/api/football-proxy") {
+    const body = await readJson(request);
+    const config = await apiConfig();
+    if (!config.token) {
+      sendJson(response, 400, { error: "Token de API no configurado" });
+      return;
+    }
+    const apiUrl = body.resource === "standings"
+      ? "https://api.football-data.org/v4/competitions/WC/standings"
+      : config.url;
+
+    try {
+      const fetchResponse = await fetch(apiUrl, {
+        headers: { "X-Auth-Token": config.token },
+      });
+      if (!fetchResponse.ok) {
+        sendJson(response, fetchResponse.status, { error: `API error: ${fetchResponse.status}` });
+        return;
+      }
+      sendJson(response, 200, await fetchResponse.json());
+    } catch (error) {
+      sendJson(response, 500, { error: `Fetch error: ${error.message}` });
+    }
+    return;
+  }
+
   if (user.role !== "Administrador") {
     sendJson(response, 403, { error: "Acceso exclusivo del administrador" });
     return;
@@ -223,6 +283,26 @@ async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/users") {
     const { rows } = await pool.query("select * from prm_users order by name");
     sendJson(response, 200, { users: rows.map(privateUser) });
+    return;
+  }
+
+  if (request.method === "PUT" && pathname === "/api/settings/api") {
+    const body = await readJson(request);
+    const url = String(body.url || "").trim();
+    const token = String(body.token || "").trim();
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "https:") throw new Error();
+    } catch {
+      sendJson(response, 400, { error: "La URL de la API debe ser HTTPS" });
+      return;
+    }
+    await saveApiConfig(url, token);
+    const config = await apiConfig();
+    sendJson(response, 200, {
+      url: config.url,
+      tokenConfigured: Boolean(config.token),
+    });
     return;
   }
 
@@ -277,28 +357,6 @@ async function handleApi(request, response, pathname) {
       [id, values.name, values.nickname, ...values.credentials],
     );
     sendJson(response, 200, { ok: true });
-    return;
-  }
-
-  // Proxy para football-data.org (evita CORS)
-  if (request.method === "POST" && pathname === "/api/football-proxy") {
-    const body = await readJson(request);
-    const apiUrl = body.url || "https://api.football-data.org/v4/competitions/WC/matches";
-    const apiToken = body.token || "";
-    
-    try {
-      const fetchResponse = await fetch(apiUrl, {
-        headers: apiToken ? { "X-Auth-Token": apiToken } : {},
-      });
-      if (!fetchResponse.ok) {
-        sendJson(response, fetchResponse.status, { error: `API error: ${fetchResponse.status}` });
-        return;
-      }
-      const data = await fetchResponse.json();
-      sendJson(response, 200, data);
-    } catch (err) {
-      sendJson(response, 500, { error: `Fetch error: ${err.message}` });
-    }
     return;
   }
 

@@ -28,7 +28,8 @@
       </a>
       <nav class="desktop-nav" aria-label="Navegación principal">
         <button class="nav-link active" data-view="inicio">Inicio</button>
-        <button class="nav-link" data-view="partidos">Pronósticos</button>
+        <button class="nav-link" data-view="partidos">Mi polla</button>
+        <button class="nav-link" data-view="pronosticos">Pronósticos</button>
         <button class="nav-link" data-view="ranking">Ranking</button>
         <button class="nav-link" data-view="grupos">Grupos</button>
         <button class="nav-link admin-only hidden" data-view="admin">Administrar</button>
@@ -146,6 +147,18 @@
         <div id="matchesList" class="matches-list"></div>
       </section>
 
+      <section id="pronosticos" class="view">
+        <div class="page-heading">
+          <span class="eyebrow">PRONÓSTICOS DEL GRUPO</span>
+          <h1>¿Qué marcó cada uno?</h1>
+          <p>Consulta los pronósticos de ayer, hoy y mañana. Los marcadores del grupo se revelan al cierre.</p>
+        </div>
+        <div class="toolbar group-predictions-toolbar">
+          <div id="groupPredictionFilters" class="filter-tabs"></div>
+        </div>
+        <div id="groupPredictionsList" class="group-predictions-list"></div>
+      </section>
+
       <section id="ranking" class="view">
         <div class="page-heading ranking-heading">
           <div>
@@ -215,7 +228,7 @@
               <button class="primary-button" type="submit">Guardar configuración</button>
             </form>
             <p class="form-note">
-              Compatible con Football-Data.org. La clave queda guardada solo en este navegador.
+              Configuración compartida entre dispositivos. El token se guarda cifrado en el servidor y nunca se muestra.
             </p>
           </article>
           <article class="admin-card">
@@ -241,7 +254,8 @@
 
     <nav class="mobile-nav" aria-label="Navegación móvil">
       <button class="mobile-link active" data-view="inicio"><span>⌂</span>Inicio</button>
-      <button class="mobile-link" data-view="partidos"><span>▦</span>Pronósticos</button>
+      <button class="mobile-link" data-view="partidos"><span>▦</span>Mi polla</button>
+      <button class="mobile-link" data-view="pronosticos"><span>◉</span>Grupo</button>
       <button class="mobile-link" data-view="ranking"><span>♛</span>Ranking</button>
       <button class="mobile-link" data-view="grupos"><span>▤</span>Grupos</button>
       <button class="mobile-link admin-only hidden" data-view="admin"><span>⚙</span>Admin</button>

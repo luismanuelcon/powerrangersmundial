@@ -56,6 +56,12 @@ try {
       updated_at timestamptz not null default now()
     );
 
+    create table if not exists prm_settings (
+      key text primary key,
+      value_cipher text not null,
+      updated_at timestamptz not null default now()
+    );
+
     create index if not exists prm_sessions_user_id_idx on prm_sessions(user_id);
     create index if not exists prm_sessions_expires_at_idx on prm_sessions(expires_at);
   `);

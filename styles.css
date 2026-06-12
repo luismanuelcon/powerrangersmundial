@@ -2218,6 +2218,133 @@ button {
 }
 
 /* =====================================================
+   GROUP PREDICTIONS
+===================================================== */
+
+.group-predictions-toolbar {
+  justify-content: flex-start;
+}
+
+.group-predictions-list {
+  padding: 0 5vw 80px;
+}
+
+.group-prediction-day + .group-prediction-day {
+  margin-top: 34px;
+}
+
+.group-prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.group-prediction-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  color: var(--dark2);
+  background: var(--white);
+}
+
+.group-prediction-match {
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.group-prediction-match small {
+  display: block;
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.group-prediction-status {
+  align-self: start;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.group-prediction-teams {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  background: #f7f6f1;
+}
+
+.group-prediction-teams span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.group-prediction-teams span:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.group-prediction-teams strong {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.group-prediction-rows {
+  padding: 10px 18px 16px;
+}
+
+.group-prediction-row {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dark2);
+}
+
+.group-prediction-row.current-user {
+  color: var(--green);
+}
+
+.group-prediction-row .pred-avatar {
+  width: 30px;
+  height: 30px;
+  background: var(--green);
+  font-size: 10px;
+}
+
+.group-prediction-score {
+  min-width: 48px;
+  color: var(--dark2);
+  font-weight: 800;
+  text-align: right;
+}
+
+.group-prediction-private {
+  padding: 16px 0 6px;
+  display: grid;
+  gap: 6px;
+}
+
+.group-prediction-private strong {
+  color: var(--green);
+}
+
+.group-prediction-private span {
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =====================================================
    PREDICTIONS DIALOG
 ===================================================== */
 
@@ -2408,6 +2535,37 @@ button {
 }
 
 @media (max-width: 600px) {
+  .group-predictions-list {
+    padding: 0 14px 80px;
+  }
+
+  .group-prediction-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .group-predictions-toolbar .filter-tabs {
+    width: 100%;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .group-predictions-toolbar .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .group-predictions-toolbar .filter-button {
+    flex: 0 0 auto;
+  }
+
+  .group-prediction-match,
+  .group-prediction-teams,
+  .group-prediction-rows {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   #predictionsDialog {
     width: calc(100% - 20px);
   }

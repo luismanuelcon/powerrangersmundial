@@ -13,7 +13,7 @@ function defaultState() {
     currentUserId: null,
     api: {
       url: "https://api.football-data.org/v4/competitions/WC/matches",
-      token: "",
+      tokenConfigured: false,
     },
   };
 }
@@ -79,6 +79,10 @@ function loadState() {
       ...saved,
       participants,
       predictions,
+      api: {
+        url: saved.api?.url || defaultState().api.url,
+        tokenConfigured: Boolean(saved.api?.tokenConfigured),
+      },
       currentUserId: validUser ? saved.currentUserId : null,
       matches: dedupedMatches,
     };
@@ -90,6 +94,7 @@ function loadState() {
 let state = loadState();
 let activeStage = "Todos";
 let searchTerm = "";
+let groupPredictionsDateFilter = "window";
 let toastTimer;
 let adminUsers = [];
 
@@ -99,6 +104,10 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     ...state,
+    api: {
+      url: state.api.url,
+      tokenConfigured: Boolean(state.api.tokenConfigured),
+    },
     participants: state.participants.map(({ id, name, nickname, role }) => ({
       id,
       name,
@@ -329,6 +338,22 @@ function formatKickoff(dateValue) {
   return formatDate(dateValue, { hour: "numeric", minute: "2-digit" });
 }
 
+function bogotaDateKey(dateValue = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(dateValue));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function relativeBogotaDateKey(days) {
+  const [year, month, day] = bogotaDateKey().split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 function predictionDeadline(match) {
   return new Date(new Date(match.kickoff).getTime() - 30 * 60_000);
 }
@@ -464,6 +489,7 @@ async function restoreSession() {
     const data = await apiRequest("/api/session");
     state.participants = data.participants;
     state.currentUserId = data.user.id;
+    state.api = data.api || defaultState().api;
     state.predictions = {};
     for (const prediction of data.predictions || []) {
       state.predictions[prediction.user_id] ||= {};
@@ -503,6 +529,7 @@ function navigate(viewId) {
   $$("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (viewId === "partidos") renderMatchesPage();
+  if (viewId === "pronosticos") renderGroupPredictions();
   if (viewId === "ranking") renderRanking();
   if (viewId === "grupos") renderStandings();
   if (viewId === "admin") renderAdmin();
@@ -801,6 +828,111 @@ function openPredictionsDialog(matchId) {
   $("#predictionsDialog").showModal();
 }
 
+function groupPredictionRows(match) {
+  const locked = isLocked(match);
+  if (!locked) {
+    const user = currentUser();
+    const prediction = user ? predictionFor(user.id, match.id) : null;
+    return `
+      <div class="group-prediction-private">
+        <strong>Tu pronóstico: ${prediction ? `${prediction.home} - ${prediction.away}` : "Pendiente"}</strong>
+        <span>Los pronósticos del grupo se revelan 30 minutos antes del partido.</span>
+      </div>
+    `;
+  }
+
+  return state.participants
+    .map((person) => {
+      const prediction = predictionFor(person.id, match.id);
+      const score = prediction ? `${prediction.home} - ${prediction.away}` : "Sin pronóstico";
+      return `
+        <div class="group-prediction-row ${person.id === state.currentUserId ? "current-user" : ""}">
+          <span class="pred-avatar">${initials(displayName(person))}</span>
+          <strong>${escapeHtml(displayName(person))}</strong>
+          ${prediction?.automatic ? '<span class="auto-badge">Auto</span>' : ""}
+          <span class="group-prediction-score">${score}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function groupPredictionMatchCard(match) {
+  const status = match.status === "FINISHED"
+    ? `Final ${match.homeScore} - ${match.awayScore}`
+    : isLocked(match)
+      ? "Pronósticos revelados"
+      : "Pronósticos ocultos";
+  return `
+    <article class="group-prediction-card">
+      <div class="group-prediction-match">
+        <div>
+          <span class="stage-pill">${match.stage}</span>
+          <small>${formatKickoff(match.kickoff)} · ${escapeHtml(match.venue)}</small>
+        </div>
+        <span class="group-prediction-status">${status}</span>
+      </div>
+      <div class="group-prediction-teams">
+        <span><span class="mini-flag">${flagMarkup(match.home, "small")}</span>${teamName(match.home)}</span>
+        <strong>VS</strong>
+        <span><span class="mini-flag">${flagMarkup(match.away, "small")}</span>${teamName(match.away)}</span>
+      </div>
+      <div class="group-prediction-rows">${groupPredictionRows(match)}</div>
+    </article>
+  `;
+}
+
+function renderGroupPredictions() {
+  const yesterday = relativeBogotaDateKey(-1);
+  const today = relativeBogotaDateKey(0);
+  const tomorrow = relativeBogotaDateKey(1);
+  const filterDates = {
+    yesterday: [yesterday],
+    today: [today],
+    tomorrow: [tomorrow],
+    window: [yesterday, today, tomorrow],
+  };
+  const dates = filterDates[groupPredictionsDateFilter];
+  const matches = [...state.matches]
+    .filter((match) => !dates || dates.includes(bogotaDateKey(match.kickoff)))
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  const groups = matches.reduce((result, match) => {
+    const date = bogotaDateKey(match.kickoff);
+    (result[date] ||= []).push(match);
+    return result;
+  }, {});
+
+  $("#groupPredictionFilters").innerHTML = [
+    ["window", "Ayer + Hoy + Mañana"],
+    ["yesterday", "Ayer"],
+    ["today", "Hoy"],
+    ["tomorrow", "Mañana"],
+    ["all", "Todos"],
+  ].map(([value, label]) => `
+    <button class="filter-button ${groupPredictionsDateFilter === value ? "active" : ""}" data-group-date-filter="${value}">
+      ${label}
+    </button>
+  `).join("");
+
+  $("#groupPredictionsList").innerHTML = Object.entries(groups).map(([date, dateMatches]) => `
+    <section class="group-prediction-day">
+      <div class="date-title">${formatDate(`${date}T12:00:00-05:00`, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })}</div>
+      <div class="group-prediction-grid">${dateMatches.map(groupPredictionMatchCard).join("")}</div>
+    </section>
+  `).join("") || '<div class="empty-state">No hay partidos para este período.</div>';
+
+  $$("[data-group-date-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      groupPredictionsDateFilter = button.dataset.groupDateFilter;
+      renderGroupPredictions();
+    });
+  });
+}
+
 function renderRanking() {
   assignAutomaticPredictions();
   const ranking = getRanking();
@@ -1029,7 +1161,10 @@ function renderAdmin() {
   });
 
   $("#apiUrl").value = state.api.url || "";
-  $("#apiToken").value = state.api.token || "";
+  $("#apiToken").value = "";
+  $("#apiToken").placeholder = state.api.tokenConfigured
+    ? "Token guardado; escribe uno nuevo para reemplazarlo"
+    : "X-Auth-Token";
 
   $$("[data-save-result]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -1132,7 +1267,7 @@ async function syncApi() {
     const response = await fetch("/api/football-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: state.api.url, token: state.api.token }),
+      body: JSON.stringify({ resource: "matches" }),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
@@ -1190,8 +1325,8 @@ async function syncApi() {
 
 // Sincronización silenciosa para auto-refresh
 async function silentSync() {
-  console.log("silentSync: iniciando...", { url: state.api.url, hasToken: !!state.api.token });
-  if (!state.api.url || !state.api.token) {
+  console.log("silentSync: iniciando...", { url: state.api.url, hasToken: state.api.tokenConfigured });
+  if (!state.api.url || !state.api.tokenConfigured) {
     console.log("silentSync: falta URL o token");
     return;
   }
@@ -1199,7 +1334,7 @@ async function silentSync() {
     const response = await fetch("/api/football-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: state.api.url, token: state.api.token }),
+      body: JSON.stringify({ resource: "matches" }),
     });
     if (!response.ok) {
       console.log("silentSync: respuesta no OK", response.status);
@@ -1263,16 +1398,13 @@ async function fetchStandings() {
     return standingsCache;
   }
   
-  if (!state.api.token) return null;
+  if (!state.api.tokenConfigured) return null;
   
   try {
     const response = await fetch("/api/football-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        url: "https://api.football-data.org/v4/competitions/WC/standings", 
-        token: state.api.token 
-      }),
+      body: JSON.stringify({ resource: "standings" }),
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -1301,7 +1433,7 @@ async function renderStandings() {
       <div class="standings-error">
         <p>No se pudieron cargar las tablas de posiciones.</p>
         <p>Verifica que el token de API esté configurado en Admin.</p>
-        ${!state.api.token ? '<p><strong>⚠️ No hay token de API configurado</strong></p>' : ''}
+        ${!state.api.tokenConfigured ? '<p><strong>⚠️ No hay token de API configurado</strong></p>' : ''}
       </div>
     `;
     return;
@@ -1396,6 +1528,7 @@ function renderAll() {
   renderProfile();
   renderHome();
   renderMatchesPage();
+  renderGroupPredictions();
   renderRanking();
   if (isAdmin()) renderAdmin();
 }
@@ -1460,12 +1593,23 @@ $("#matchSearch").addEventListener("input", (event) => {
   $("#matchSearch").focus();
 });
 
-$("#apiForm").addEventListener("submit", (event) => {
+$("#apiForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  state.api.url = $("#apiUrl").value.trim();
-  state.api.token = $("#apiToken").value.trim();
-  saveState();
-  showToast("Configuración guardada");
+  try {
+    const config = await apiRequest("/api/settings/api", {
+      method: "PUT",
+      body: JSON.stringify({
+        url: $("#apiUrl").value.trim(),
+        token: $("#apiToken").value.trim(),
+      }),
+    });
+    state.api = config;
+    saveState();
+    renderAdmin();
+    showToast("Configuración compartida guardada");
+  } catch (error) {
+    showToast(error.message);
+  }
 });
 
 $("#syncResults").addEventListener("click", syncApi);
@@ -1483,7 +1627,7 @@ $("#copyInvite").addEventListener("click", async () => {
 
 window.addEventListener("hashchange", () => {
   const view = window.location.hash.slice(1);
-  if (["inicio", "partidos", "ranking", "grupos", "admin"].includes(view)) navigate(view);
+  if (["inicio", "partidos", "pronosticos", "ranking", "grupos", "admin"].includes(view)) navigate(view);
 });
 
 async function initializeApp() {
@@ -1494,13 +1638,13 @@ async function initializeApp() {
   assignAutomaticPredictions();
   renderAll();
   const initialView = window.location.hash.slice(1);
-  if (["inicio", "partidos", "ranking", "grupos", "admin"].includes(initialView)) navigate(initialView);
+  if (["inicio", "partidos", "pronosticos", "ranking", "grupos", "admin"].includes(initialView)) navigate(initialView);
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy
   const today = new Date().toISOString().slice(0, 10);
   const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
-  if (hasTodayMatches && state.api.token) {
+  if (hasTodayMatches && state.api.tokenConfigured) {
     setTimeout(() => silentSync(), 2000);
   }
 }
@@ -1513,6 +1657,7 @@ setInterval(() => {
   renderHome();
   if (changed) {
     if ($("#partidos").classList.contains("active-view")) renderMatchesPage();
+    if ($("#pronosticos").classList.contains("active-view")) renderGroupPredictions();
     if ($("#admin").classList.contains("active-view")) renderAdmin();
   }
   // Siempre actualizar ranking si está visible
@@ -1523,7 +1668,7 @@ setInterval(() => {
 setInterval(async () => {
   const today = new Date().toISOString().slice(0, 10);
   const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
-  if (hasTodayMatches && state.api.token) {
+  if (hasTodayMatches && state.api.tokenConfigured) {
     console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
   }
