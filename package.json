@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "migrate": "node scripts/migrate.mjs"
+    "migrate": "node scripts/migrate.mjs",
+    "seed:users": "node scripts/seed-users.mjs"
   },
   "dependencies": {
     "pg": "^8.16.3"

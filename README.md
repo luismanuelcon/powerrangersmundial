@@ -15,8 +15,13 @@ Instala dependencias y crea las tablas:
 ```powershell
 npm install
 npm run migrate
+npm run seed:users
 node server.mjs
 ```
+
+`npm run migrate` solo actualiza el esquema y nunca modifica usuarios.
+`npm run seed:users` se usa únicamente en la instalación inicial; inserta
+usuarios inexistentes y conserva cualquier edición realizada desde la aplicación.
 
 La aplicación queda disponible en `http://localhost:4200`.
 
@@ -26,7 +31,7 @@ navegador funcionan mejor desde `http://localhost`.
 ## Acceso privado
 
 Copia `users.example.js` como `users.local.js`, configura los usuarios y ejecuta
-`npm run migrate`. El archivo local está ignorado por Git para impedir la
+`npm run seed:users` una sola vez. El archivo local está ignorado por Git para impedir la
 publicación de celulares y documentos de identidad.
 
 Celulares y cédulas se cifran antes de guardarse en PostgreSQL. La autenticación
