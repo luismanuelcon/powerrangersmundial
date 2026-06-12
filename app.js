@@ -1,5 +1,6 @@
 const ADMIN_ID = "admin";
 const STORAGE_KEY = "prm_state_v1";
+const APP_TIME_ZONE = "America/Bogota";
 
 const initialMatches = window.WORLD_CUP_GROUP_FIXTURES;
 
@@ -330,7 +331,7 @@ function flagMarkup(name, size = "large") {
 
 function formatDate(dateValue, options = {}) {
   return new Intl.DateTimeFormat("es-CO", {
-    timeZone: "America/Bogota",
+    timeZone: APP_TIME_ZONE,
     ...options,
   }).format(new Date(dateValue));
 }
@@ -341,7 +342,7 @@ function formatKickoff(dateValue) {
 
 function bogotaDateKey(dateValue = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
+    timeZone: APP_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -424,14 +425,14 @@ function calculateStats(person) {
 }
 
 function calculateDayStats(person, dateStr = null) {
-  const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+  const targetDate = dateStr || bogotaDateKey();
   let exact = 0;
   let correct = 0;
   let points = 0;
   const predictions = state.predictions[person.id] || {};
 
   state.matches.forEach((match) => {
-    const matchDate = match.kickoff?.slice(0, 10);
+    const matchDate = bogotaDateKey(match.kickoff);
     if (matchDate !== targetDate) return;
     const prediction = predictions[match.id];
     if (!prediction) return;
@@ -705,9 +706,9 @@ function renderMatchesPage() {
     .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
   const groups = Object.groupBy
-    ? Object.groupBy(filtered, (match) => match.kickoff.slice(0, 10))
+    ? Object.groupBy(filtered, (match) => bogotaDateKey(match.kickoff))
     : filtered.reduce((acc, match) => {
-        const key = match.kickoff.slice(0, 10);
+        const key = bogotaDateKey(match.kickoff);
         (acc[key] ||= []).push(match);
         return acc;
       }, {});
@@ -940,9 +941,9 @@ function renderRanking() {
   const podiumClasses = ["first", "second", "third"];
   
   // Partidos del día
-  const today = new Date().toISOString().slice(0, 10);
+  const today = bogotaDateKey();
   const todayMatches = state.matches
-    .filter((m) => m.kickoff?.slice(0, 10) === today)
+    .filter((m) => bogotaDateKey(m.kickoff) === today)
     .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
   
   if (todayMatches.length > 0) {
@@ -1906,8 +1907,8 @@ async function initializeApp() {
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy
-  const today = new Date().toISOString().slice(0, 10);
-  const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
+  const today = bogotaDateKey();
+  const hasTodayMatches = state.matches.some((m) => bogotaDateKey(m.kickoff) === today);
   if (hasTodayMatches && state.api.tokenConfigured) {
     setTimeout(() => silentSync(), 2000);
   }
@@ -1930,8 +1931,8 @@ setInterval(() => {
 
 // Auto-sync con API si hay partidos hoy (cada 30 minutos para evitar datos incompletos)
 setInterval(async () => {
-  const today = new Date().toISOString().slice(0, 10);
-  const hasTodayMatches = state.matches.some((m) => m.kickoff?.slice(0, 10) === today);
+  const today = bogotaDateKey();
+  const hasTodayMatches = state.matches.some((m) => bogotaDateKey(m.kickoff) === today);
   if (hasTodayMatches && state.api.tokenConfigured) {
     console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
