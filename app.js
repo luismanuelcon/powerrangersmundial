@@ -95,6 +95,7 @@ let state = loadState();
 let activeStage = "Todos";
 let searchTerm = "";
 let groupPredictionsDateFilter = "window";
+let reminderMatchId = "";
 let toastTimer;
 let adminUsers = [];
 
@@ -1165,6 +1166,7 @@ function renderAdmin() {
   $("#apiToken").placeholder = state.api.tokenConfigured
     ? "Token guardado; escribe uno nuevo para reemplazarlo"
     : "X-Auth-Token";
+  renderReminderPanel();
 
   $$("[data-save-result]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -1198,6 +1200,261 @@ function renderAdmin() {
       }
     });
   });
+}
+
+function reminderMatches() {
+  return [...state.matches]
+    .filter((match) => !isLocked(match))
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+}
+
+function reminderPendingUsers(match) {
+  return state.participants.filter((person) => !predictionFor(person.id, match.id));
+}
+
+function formatRemainingTime(milliseconds) {
+  const minutes = Math.max(0, Math.ceil(milliseconds / 60_000));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+function renderReminderPanel() {
+  const select = $("#reminderMatch");
+  const preview = $("#reminderPreview");
+  const shareButton = $("#shareReminder");
+  if (!select || !preview || !shareButton) return;
+
+  const matches = reminderMatches();
+  if (!matches.some((match) => match.id === reminderMatchId)) {
+    reminderMatchId = matches[0]?.id || "";
+  }
+  select.innerHTML = matches.map((match) => `
+    <option value="${match.id}" ${match.id === reminderMatchId ? "selected" : ""}>
+      ${formatDate(match.kickoff, { day: "numeric", month: "short" })} · ${escapeHtml(teamName(match.home))} vs. ${escapeHtml(teamName(match.away))}
+    </option>
+  `).join("");
+
+  const match = matches.find((item) => item.id === reminderMatchId);
+  shareButton.disabled = !match;
+  if (!match) {
+    preview.innerHTML = '<div class="empty-state">No hay partidos pendientes de cierre.</div>';
+    return;
+  }
+
+  const pending = reminderPendingUsers(match);
+  const deadline = predictionDeadline(match);
+  const reminderAt = new Date(new Date(match.kickoff).getTime() - 60 * 60_000);
+  const now = new Date();
+  const timing = now >= reminderAt
+    ? "Momento recomendado para compartir"
+    : `Momento recomendado en ${formatRemainingTime(reminderAt - now)}`;
+
+  preview.innerHTML = `
+    <div class="reminder-preview-match">
+      <span class="stage-pill">${escapeHtml(match.stage)}</span>
+      <strong>${escapeHtml(teamName(match.home))} vs. ${escapeHtml(teamName(match.away))}</strong>
+      <small>${formatDate(match.kickoff, { weekday: "long", day: "numeric", month: "long" })} · ${formatKickoff(match.kickoff)}</small>
+    </div>
+    <div class="reminder-preview-status">
+      <span>${timing}</span>
+      <strong>${pending.length} pendiente${pending.length === 1 ? "" : "s"}</strong>
+      <small>Cierre: ${formatKickoff(deadline)}</small>
+    </div>
+    <div class="reminder-pending-names">
+      ${pending.length
+        ? pending.map((person) => `<span>${escapeHtml(displayName(person))}</span>`).join("")
+        : "<span>Todos completaron su pronóstico</span>"}
+    </div>
+  `;
+}
+
+function loadCanvasImage(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = source;
+  });
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+  const words = text.split(/\s+/);
+  let line = "";
+  let lines = 0;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width > maxWidth && line) {
+      context.fillText(line, x, y);
+      y += lineHeight;
+      lines += 1;
+      line = word;
+      if (lines >= maxLines) return y;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line && lines < maxLines) {
+    context.fillText(line, x, y);
+    y += lineHeight;
+  }
+  return y;
+}
+
+async function createReminderImage(match, pending) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const context = canvas.getContext("2d");
+  const background = context.createLinearGradient(0, 0, 1080, 1080);
+  background.addColorStop(0, "#07142b");
+  background.addColorStop(0.5, "#090909");
+  background.addColorStop(1, "#31080b");
+  context.fillStyle = background;
+  context.fillRect(0, 0, 1080, 1080);
+
+  context.strokeStyle = "rgba(255, 193, 7, 0.45)";
+  context.lineWidth = 4;
+  context.strokeRect(36, 36, 1008, 1008);
+
+  try {
+    const logo = await loadCanvasImage("assets/logo-power-rangers-mundial.png");
+    context.drawImage(logo, 70, 65, 150, 150);
+  } catch {
+    // The reminder remains usable even if the logo cannot be loaded.
+  }
+
+  context.fillStyle = "#ffc107";
+  context.font = '700 26px "DM Sans", sans-serif';
+  context.letterSpacing = "5px";
+  context.fillText("FALTA TU PRONÓSTICO", 250, 125);
+  context.letterSpacing = "0px";
+  context.fillStyle = "#ffffff";
+  context.font = '900 68px "Archivo Black", sans-serif';
+  const titleY = wrapCanvasText(
+    context,
+    `${teamName(match.home)} vs. ${teamName(match.away)}`,
+    70,
+    300,
+    940,
+    78,
+    2,
+  );
+
+  context.fillStyle = "#aeb2ba";
+  context.font = '600 30px "DM Sans", sans-serif';
+  context.fillText(
+    `${formatDate(match.kickoff, { weekday: "long", day: "numeric", month: "long" })} · ${formatKickoff(match.kickoff)}`,
+    70,
+    titleY + 22,
+  );
+
+  context.fillStyle = "rgba(255, 193, 7, 0.09)";
+  context.strokeStyle = "rgba(255, 193, 7, 0.35)";
+  context.fillRect(70, titleY + 70, 940, 150);
+  context.strokeRect(70, titleY + 70, 940, 150);
+  context.fillStyle = "#ffc107";
+  context.font = '900 42px "Archivo Black", sans-serif';
+  context.fillText(`CIERRA A LAS ${formatKickoff(predictionDeadline(match))}`, 105, titleY + 130);
+  context.fillStyle = "#ffffff";
+  context.font = '600 28px "DM Sans", sans-serif';
+  context.fillText("Ingresa ahora y guarda tu marcador.", 105, titleY + 180);
+
+  const pendingNames = pending.map(displayName);
+  context.fillStyle = "#ffffff";
+  context.font = '900 34px "Archivo Black", sans-serif';
+  context.fillText(
+    pending.length ? `${pending.length} PENDIENTE${pending.length === 1 ? "" : "S"}` : "TODOS COMPLETARON",
+    70,
+    titleY + 295,
+  );
+  context.fillStyle = "#d9d9d9";
+  context.font = '600 29px "DM Sans", sans-serif';
+  wrapCanvasText(
+    context,
+    pendingNames.length ? pendingNames.join(" · ") : "El grupo ya completó sus pronósticos.",
+    70,
+    titleY + 345,
+    940,
+    42,
+    4,
+  );
+
+  context.fillStyle = "#ffc107";
+  context.font = '700 25px "DM Sans", sans-serif';
+  context.fillText("powerrangersmundial.azurewebsites.net", 70, 1000);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("No fue posible crear la imagen")), "image/png");
+  });
+}
+
+function reminderMessage(match, pending) {
+  const names = pending.map(displayName);
+  return [
+    `⚡ *Falta tu pronóstico*`,
+    `${teamName(match.home)} vs. ${teamName(match.away)}`,
+    `Partido: ${formatDate(match.kickoff, { weekday: "long", day: "numeric", month: "long" })} a las ${formatKickoff(match.kickoff)}`,
+    `Cierre: ${formatKickoff(predictionDeadline(match))}`,
+    names.length ? `Pendientes: ${names.join(", ")}` : "Todos completaron su pronóstico.",
+    `${window.location.origin}/#partidos`,
+  ].join("\n");
+}
+
+async function sharePredictionReminder() {
+  const match = state.matches.find((item) => item.id === reminderMatchId);
+  if (!match || isLocked(match)) {
+    showToast("Selecciona un partido que aún no haya cerrado.");
+    renderReminderPanel();
+    return;
+  }
+
+  const button = $("#shareReminder");
+  const pending = reminderPendingUsers(match);
+  const shareProbe = new File([""], "recordatorio.png", { type: "image/png" });
+  const supportsFileShare = Boolean(navigator.share && navigator.canShare?.({ files: [shareProbe] }));
+  const whatsappWindow = supportsFileShare ? null : window.open("", "_blank");
+  button.disabled = true;
+  button.textContent = "Creando imagen...";
+  try {
+    const blob = await createReminderImage(match, pending);
+    const file = new File([blob], `recordatorio-${match.id}.png`, { type: "image/png" });
+    const text = reminderMessage(match, pending);
+    if (supportsFileShare) {
+      await navigator.share({
+        title: `${teamName(match.home)} vs. ${teamName(match.away)}`,
+        text,
+        files: [file],
+      });
+      showToast("Recordatorio listo para compartir");
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(blob);
+    const download = document.createElement("a");
+    download.href = imageUrl;
+    download.download = file.name;
+    download.click();
+    setTimeout(() => URL.revokeObjectURL(imageUrl), 10_000);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    if (whatsappWindow) {
+      whatsappWindow.opener = null;
+      whatsappWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
+    showToast("Imagen descargada y mensaje abierto");
+  } catch (error) {
+    whatsappWindow?.close();
+    if (error.name !== "AbortError") {
+      console.error(error);
+      showToast("No fue posible preparar el recordatorio.");
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = "Crear imagen y compartir";
+  }
 }
 
 function normalizeApiMatches(data) {
@@ -1624,6 +1881,13 @@ $("#copyInvite").addEventListener("click", async () => {
     showToast("Copia el enlace desde la barra del navegador.");
   }
 });
+
+$("#reminderMatch").addEventListener("change", (event) => {
+  reminderMatchId = event.target.value;
+  renderReminderPanel();
+});
+
+$("#shareReminder").addEventListener("click", sharePredictionReminder);
 
 window.addEventListener("hashchange", () => {
   const view = window.location.hash.slice(1);

@@ -1498,6 +1498,111 @@ main {
   color: rgba(255,255,255,0.7);
 }
 
+.reminder-card {
+  color: var(--white);
+  border-color: rgba(255,193,7,.35);
+  background:
+    radial-gradient(circle at right top, rgba(255,26,26,.16), transparent 38%),
+    radial-gradient(circle at left bottom, rgba(0,87,255,.2), transparent 42%),
+    #111;
+}
+
+.reminder-card h2 {
+  margin: 7px 0 12px;
+}
+
+.reminder-match-field {
+  margin: 20px 0 14px;
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.reminder-match-field select {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,193,7,.25);
+  color: var(--white);
+  background: #090909;
+}
+
+.reminder-preview {
+  margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.28);
+}
+
+.reminder-preview-match,
+.reminder-preview-status {
+  padding: 14px;
+}
+
+.reminder-preview-match strong,
+.reminder-preview-match small,
+.reminder-preview-status span,
+.reminder-preview-status strong,
+.reminder-preview-status small {
+  display: block;
+}
+
+.reminder-preview-match strong {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.reminder-preview-match small,
+.reminder-preview-status small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.reminder-preview-status {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.reminder-preview-status span {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reminder-preview-status strong {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--gold);
+  font: 22px "Archivo Black", sans-serif;
+}
+
+.reminder-pending-names {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reminder-pending-names span {
+  padding: 5px 8px;
+  border: 1px solid rgba(255,193,7,.25);
+  color: var(--gold-light);
+  background: rgba(255,193,7,.07);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.reminder-card .primary-button {
+  width: 100%;
+}
+
 .light-button {
   min-height: 48px;
   padding: 0 18px;
