@@ -61,6 +61,12 @@ try {
   `);
 
   for (const person of participants) {
+    const phone = String(person.phone || "").replace(/\D/g, "");
+    const document = String(person.document || "").replace(/\D/g, "");
+    if (!/^\d{10}$/.test(phone) || !/^\d{6,10}$/.test(document)) {
+      throw new Error(`Credenciales inválidas para ${person.id}`);
+    }
+
     await client.query(
       `
         insert into prm_users (
@@ -81,10 +87,10 @@ try {
         person.id,
         person.name,
         person.nickname,
-        lookupHash(person.phone, secret),
-        encrypt(person.phone, secret),
-        lookupHash(person.document, secret),
-        encrypt(person.document, secret),
+        lookupHash(phone, secret),
+        encrypt(phone, secret),
+        lookupHash(document, secret),
+        encrypt(document, secret),
         person.role,
       ],
     );
