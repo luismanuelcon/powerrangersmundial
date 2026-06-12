@@ -928,6 +928,9 @@ function openUserDialog(userId = "") {
   $("#userNickname").value = person?.nickname || "";
   $("#userPhone").value = person?.phone || "";
   $("#userDocument").value = person?.document || "";
+  $("#userCredentialsNote").textContent = person?.credentialsNeedReset
+    ? "Las credenciales anteriores no pueden recuperarse. Ingresa nuevamente el celular y la cédula."
+    : "";
   $("#userDialog").showModal();
 }
 
@@ -1012,8 +1015,8 @@ function renderAdmin() {
           <div class="participant-data">
             <strong>${escapeHtml(person.name)}</strong>
             <small>Apodo: ${escapeHtml(displayName(person))}</small>
-            <small>Celular: ${person.phone}</small>
-            <small>Cédula: ${person.document}</small>
+            <small>Celular: ${person.credentialsNeedReset ? "Requiere actualización" : escapeHtml(person.phone)}</small>
+            <small>Cédula: ${person.credentialsNeedReset ? "Requiere actualización" : escapeHtml(person.document)}</small>
           </div>
           <span class="role-badge ${person.id === ADMIN_ID ? "admin-role" : ""}">${person.role}</span>
           <button class="edit-user-button" type="button" data-edit-user="${person.id}" aria-label="Editar ${escapeHtml(person.name)}">Editar</button>

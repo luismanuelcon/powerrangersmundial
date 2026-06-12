@@ -93,11 +93,21 @@ function publicUser(row) {
 }
 
 function privateUser(row) {
-  return {
-    ...publicUser(row),
-    phone: decrypt(row.phone_cipher, secret),
-    document: decrypt(row.document_cipher, secret),
-  };
+  try {
+    return {
+      ...publicUser(row),
+      phone: decrypt(row.phone_cipher, secret),
+      document: decrypt(row.document_cipher, secret),
+      credentialsNeedReset: false,
+    };
+  } catch {
+    return {
+      ...publicUser(row),
+      phone: "",
+      document: "",
+      credentialsNeedReset: true,
+    };
+  }
 }
 
 async function authenticatedUser(request) {

@@ -210,7 +210,7 @@
                 <input id="apiUrl" type="url" placeholder="https://api.football-data.org/v4/competitions/WC/matches" />
               </label>
               <label>Token de acceso
-                <input id="apiToken" type="password" placeholder="X-Auth-Token" />
+                <input id="apiToken" type="password" autocomplete="new-password" placeholder="X-Auth-Token" />
               </label>
               <button class="primary-button" type="submit">Guardar configuración</button>
             </form>
@@ -282,8 +282,9 @@
           <input id="userPhone" required type="tel" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" placeholder="3001234567" />
         </label>
         <label>Cédula / clave
-          <input id="userDocument" required type="text" inputmode="numeric" minlength="6" maxlength="10" pattern="[0-9]{6,10}" placeholder="Número de cédula" />
+          <input id="userDocument" required type="text" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="10" pattern="[0-9]{6,10}" placeholder="Número de cédula" />
         </label>
+        <p id="userCredentialsNote" class="form-note"></p>
         <button class="primary-button" type="submit">Guardar usuario</button>
       </form>
     </dialog>
