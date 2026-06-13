@@ -142,6 +142,40 @@ function displayName(person) {
   return person.nickname?.trim() || person.name.split(/\s+/)[0];
 }
 
+const participantPhotoNames = new Set([
+  "CHECHA",
+  "COLO",
+  "GAMBE",
+  "PANELA",
+  "PEPE CHOLO SABROSO",
+  "PIRATA",
+  "PRIMO HERMANO",
+  "TONY CHAMO",
+  "VENENO",
+]);
+
+function participantPhotoName(person) {
+  return displayName(person)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+}
+
+function participantPhotoSource(person) {
+  const name = participantPhotoName(person);
+  return participantPhotoNames.has(name)
+    ? `assets/Fotos/thumbs/${encodeURIComponent(name)}.jpg`
+    : "";
+}
+
+function participantAvatar(person, className) {
+  const source = participantPhotoSource(person);
+  if (!source) {
+    return `<span class="${className}">${initials(displayName(person))}</span>`;
+  }
+  return `<img class="${className} participant-photo" src="${source}" alt="${escapeHtml(displayName(person))}" loading="lazy" decoding="async">`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -813,7 +847,7 @@ function openPredictionsDialog(matchId) {
       return `
         <div class="prediction-item ${person.id === state.currentUserId ? 'current-user' : ''}">
           <div class="prediction-user">
-            <span class="pred-avatar">${initials(displayName(person))}</span>
+            ${participantAvatar(person, "pred-avatar")}
             <span class="pred-name">${escapeHtml(displayName(person))}</span>
             ${isAutomatic}
           </div>
@@ -849,7 +883,7 @@ function groupPredictionRows(match) {
       const score = prediction ? `${prediction.home} - ${prediction.away}` : "Sin pronóstico";
       return `
         <div class="group-prediction-row ${person.id === state.currentUserId ? "current-user" : ""}">
-          <span class="pred-avatar">${initials(displayName(person))}</span>
+          ${participantAvatar(person, "pred-avatar")}
           <strong>${escapeHtml(displayName(person))}</strong>
           ${prediction?.automatic ? '<span class="auto-badge">Auto</span>' : ""}
           <span class="group-prediction-score">${score}</span>
@@ -939,6 +973,11 @@ function renderRanking() {
   assignAutomaticPredictions();
   const ranking = getRanking();
   const podiumClasses = ["first", "second", "third"];
+  const podiumMedals = [
+    { icon: "🥇", label: "Oro" },
+    { icon: "🥈", label: "Plata" },
+    { icon: "🥉", label: "Bronce" },
+  ];
   
   // Partidos del día
   const today = bogotaDateKey();
@@ -992,10 +1031,12 @@ function renderRanking() {
     .map(
       (person, index) => `
         <article class="podium-card ${podiumClasses[index]}">
-          <span class="podium-position">#${index + 1}</span>
-          <span class="podium-avatar">${initials(displayName(person))}</span>
-          <strong>${escapeHtml(displayName(person))}</strong>
-          <small>${person.points} puntos · ${person.exact} exactos</small>
+          <span class="podium-medal" role="img" aria-label="${podiumMedals[index].label}">${podiumMedals[index].icon}</span>
+          ${participantAvatar(person, "podium-avatar")}
+          <span class="podium-copy">
+            <strong>${escapeHtml(displayName(person))}</strong>
+            <small>${person.points} puntos · ${person.exact} exactos</small>
+          </span>
         </article>`,
     )
     .join("");
@@ -1003,13 +1044,14 @@ function renderRanking() {
   $("#rankingBody").innerHTML = ranking
     .map(
       (person, index) => `
-        <tr>
+        <tr class="${index === ranking.length - 1 ? "ranking-last-place" : ""}">
           <td><strong>#${index + 1}</strong></td>
           <td>
             <div class="ranking-person">
-              <span class="table-avatar">${initials(displayName(person))}</span>
-              ${escapeHtml(displayName(person))}
+              ${participantAvatar(person, "table-avatar")}
+              <span class="ranking-name">${escapeHtml(displayName(person))}</span>
               ${person.id === state.currentUserId ? '<span class="you-badge">TÚ</span>' : ""}
+              ${index === ranking.length - 1 ? '<span class="last-place-badge">LA PERRA DEL MUNDIAL</span>' : ""}
             </div>
           </td>
           <td>${person.exact}</td>
@@ -1035,7 +1077,7 @@ function renderRanking() {
       </div>
       <div class="last-place-content">
         <div class="last-place-info">
-          <span class="last-place-avatar">${initials(displayName(lastPerson))}</span>
+          ${participantAvatar(lastPerson, "last-place-avatar")}
           <div class="last-place-details">
             <strong>${escapeHtml(displayName(lastPerson))}</strong>
             <small>#${ranking.length} · ${lastPerson.points} puntos totales</small>
@@ -1145,7 +1187,7 @@ function renderAdmin() {
     .map(
       (person) => `
         <div class="participant">
-          <span class="table-avatar">${initials(displayName(person))}</span>
+          ${participantAvatar(person, "table-avatar")}
           <div class="participant-data">
             <strong>${escapeHtml(person.name)}</strong>
             <small>Apodo: ${escapeHtml(displayName(person))}</small>
@@ -1777,7 +1819,12 @@ function shareWhatsApp() {
 
 function renderProfile() {
   const user = currentUser();
-  $("#profileInitial").textContent = user ? initials(displayName(user)) : "?";
+  const photoSource = user ? participantPhotoSource(user) : "";
+  $("#profileInitial").innerHTML = photoSource
+    ? `<img class="profile-photo" src="${photoSource}" alt="${escapeHtml(displayName(user))}">`
+    : user
+      ? initials(displayName(user))
+      : "?";
   $("#profileName").textContent = user ? displayName(user) : "Entrar";
   $$(".admin-only").forEach((element) => element.classList.toggle("hidden", !isAdmin()));
 }
