@@ -142,6 +142,17 @@ function displayName(person) {
   return person.nickname?.trim() || person.name.split(/\s+/)[0];
 }
 
+const participantColors = [
+  "#ff3b30", "#007aff", "#34c759", "#ffcc00", "#af52de", "#ff9500",
+  "#00c7be", "#ff2d55", "#64d2ff", "#bf5af2", "#30d158", "#ffd60a",
+];
+
+function participantColor(person) {
+  const orderedIds = state.participants.map((item) => item.id).sort();
+  const index = Math.max(0, orderedIds.indexOf(person.id));
+  return participantColors[index % participantColors.length];
+}
+
 const participantPhotoNames = new Set([
   "CHECHA",
   "COLO",
@@ -170,10 +181,11 @@ function participantPhotoSource(person) {
 
 function participantAvatar(person, className) {
   const source = participantPhotoSource(person);
+  const color = participantColor(person);
   if (!source) {
-    return `<span class="${className}">${initials(displayName(person))}</span>`;
+    return `<span class="${className} participant-avatar" style="--participant-color:${color}">${initials(displayName(person))}</span>`;
   }
-  return `<img class="${className} participant-photo" src="${source}" alt="${escapeHtml(displayName(person))}" loading="lazy" decoding="async">`;
+  return `<img class="${className} participant-photo participant-avatar" style="--participant-color:${color}" src="${source}" alt="${escapeHtml(displayName(person))}" loading="lazy" decoding="async">`;
 }
 
 function escapeHtml(value) {
@@ -390,6 +402,18 @@ function relativeBogotaDateKey(days) {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
+function upcomingFirstSort(a, b) {
+  const today = bogotaDateKey();
+  const dateA = bogotaDateKey(a.kickoff);
+  const dateB = bogotaDateKey(b.kickoff);
+  const sectionA = dateA >= today ? 0 : 1;
+  const sectionB = dateB >= today ? 0 : 1;
+  if (sectionA !== sectionB) return sectionA - sectionB;
+  return sectionA === 0
+    ? new Date(a.kickoff) - new Date(b.kickoff)
+    : new Date(b.kickoff) - new Date(a.kickoff);
+}
+
 function predictionDeadline(match) {
   return new Date(new Date(match.kickoff).getTime() - 30 * 60_000);
 }
@@ -445,6 +469,33 @@ function calculateStats(person) {
     // Contar puntos para partidos FINISHED, IN_PLAY o PAUSED (con scores válidos)
     const validStatuses = ["FINISHED", "IN_PLAY", "PAUSED"];
     if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) return;
+
+    if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
+      exact += 1;
+      points += 2;
+    } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
+      correct += 1;
+      points += 1;
+    }
+  });
+
+  return { ...person, exact, correct, points, firstPredictionAt };
+}
+
+function calculateStatsUntil(person, dateKey) {
+  let exact = 0;
+  let correct = 0;
+  let points = 0;
+  let firstPredictionAt = Number.MAX_SAFE_INTEGER;
+  const predictions = state.predictions[person.id] || {};
+
+  state.matches.forEach((match) => {
+    if (bogotaDateKey(match.kickoff) > dateKey) return;
+    const prediction = predictions[match.id];
+    if (!prediction) return;
+    firstPredictionAt = Math.min(firstPredictionAt, new Date(prediction.savedAt).getTime());
+    if (!["FINISHED", "IN_PLAY", "PAUSED"].includes(match.status)) return;
+    if (match.homeScore == null || match.awayScore == null) return;
 
     if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
       exact += 1;
@@ -567,6 +618,7 @@ function navigate(viewId) {
   if (viewId === "partidos") renderMatchesPage();
   if (viewId === "pronosticos") renderGroupPredictions();
   if (viewId === "ranking") renderRanking();
+  if (viewId === "estadisticas") renderStatistics();
   if (viewId === "grupos") renderStandings();
   if (viewId === "admin") renderAdmin();
 }
@@ -628,7 +680,7 @@ function renderHome() {
   assignAutomaticPredictions();
   const upcoming = [...state.matches]
     .filter((match) => match.status !== "FINISHED")
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    .sort(upcomingFirstSort);
   const cards = upcoming.slice(0, 3);
   $("#homeMatches").innerHTML = cards.length
     ? cards.map(matchCard).join("")
@@ -737,7 +789,7 @@ function renderMatchesPage() {
   const filtered = state.matches
     .filter((match) => activeStage === "Todos" || match.stage === activeStage)
     .filter((match) => `${match.home} ${match.away} ${teamName(match.home)} ${teamName(match.away)}`.toLowerCase().includes(searchTerm))
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    .sort(upcomingFirstSort);
 
   const groups = Object.groupBy
     ? Object.groupBy(filtered, (match) => bogotaDateKey(match.kickoff))
@@ -931,7 +983,7 @@ function renderGroupPredictions() {
   const dates = filterDates[groupPredictionsDateFilter];
   const matches = [...state.matches]
     .filter((match) => !dates || dates.includes(bogotaDateKey(match.kickoff)))
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    .sort(upcomingFirstSort);
   const groups = matches.reduce((result, match) => {
     const date = bogotaDateKey(match.kickoff);
     (result[date] ||= []).push(match);
@@ -1044,7 +1096,7 @@ function renderRanking() {
   $("#rankingBody").innerHTML = ranking
     .map(
       (person, index) => `
-        <tr class="${index === ranking.length - 1 ? "ranking-last-place" : ""}">
+        <tr class="${index === ranking.length - 1 ? "ranking-last-place" : ""}" style="--participant-row-color:${participantColor(person)}">
           <td><strong>#${index + 1}</strong></td>
           <td>
             <div class="ranking-person">
@@ -1093,6 +1145,83 @@ function renderRanking() {
   } else {
     $("#lastPlace").innerHTML = "";
   }
+}
+
+function renderStatistics() {
+  const container = $("#rankingHistory");
+  const resultDates = [...new Set(
+    state.matches
+      .filter((match) => ["FINISHED", "IN_PLAY", "PAUSED"].includes(match.status))
+      .filter((match) => match.homeScore != null && match.awayScore != null)
+      .map((match) => bogotaDateKey(match.kickoff)),
+  )].sort();
+
+  if (!state.participants.length || !resultDates.length) {
+    container.innerHTML = '<div class="empty-state">La gráfica aparecerá cuando existan participantes y resultados.</div>';
+    return;
+  }
+
+  const history = resultDates.map((date) => ({
+    date,
+    ranking: state.participants
+      .map((person) => calculateStatsUntil(person, date))
+      .sort((a, b) =>
+        b.points - a.points ||
+        b.exact - a.exact ||
+        a.firstPredictionAt - b.firstPredictionAt ||
+        a.name.localeCompare(b.name)),
+  }));
+  const width = Math.max(720, resultDates.length * 120);
+  const height = Math.max(360, state.participants.length * 54 + 100);
+  const left = 62;
+  const right = 50;
+  const top = 42;
+  const bottom = 62;
+  const x = (index) => resultDates.length === 1
+    ? width / 2
+    : left + index * ((width - left - right) / (resultDates.length - 1));
+  const y = (position) => state.participants.length === 1
+    ? height / 2
+    : top + (position - 1) * ((height - top - bottom) / (state.participants.length - 1));
+
+  const paths = state.participants.map((person) => {
+    const points = history.map((day, index) => {
+      const position = day.ranking.findIndex((item) => item.id === person.id) + 1;
+      return { x: x(index), y: y(position), position };
+    });
+    const path = points.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ");
+    const last = points.at(-1);
+    const source = participantPhotoSource(person);
+    const marker = source
+      ? `<image href="${source}" x="${last.x - 16}" y="${last.y - 16}" width="32" height="32" preserveAspectRatio="xMidYMid slice" class="chart-photo" />`
+      : `<g><circle cx="${last.x}" cy="${last.y}" r="16" fill="${participantColor(person)}"/><text x="${last.x}" y="${last.y + 4}" text-anchor="middle" class="chart-initials">${initials(displayName(person))}</text></g>`;
+    return `<g>
+      <path d="${path}" fill="none" stroke="${participantColor(person)}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="${participantColor(person)}" stroke="#090909" stroke-width="2"><title>${escapeHtml(displayName(person))}: puesto ${point.position}</title></circle>`).join("")}
+      ${marker}
+    </g>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="statistics-legend">
+      ${state.participants.map((person) => `
+        <div class="legend-person" style="--participant-color:${participantColor(person)}">
+          ${participantAvatar(person, "legend-avatar")}
+          <span>${escapeHtml(displayName(person))}</span>
+        </div>`).join("")}
+    </div>
+    <div class="history-chart-scroll">
+      <svg class="history-chart" style="width:${width}px" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolución diaria de posiciones">
+        ${state.participants.map((_, index) => `
+          <line x1="${left}" y1="${y(index + 1)}" x2="${width - right}" y2="${y(index + 1)}" class="chart-grid-line"/>
+          <text x="22" y="${y(index + 1) + 5}" class="chart-rank">#${index + 1}</text>`).join("")}
+        ${resultDates.map((date, index) => `
+          <text x="${x(index)}" y="${height - 22}" text-anchor="middle" class="chart-date">${formatDate(`${date}T12:00:00-05:00`, { day: "numeric", month: "short" })}</text>`).join("")}
+        ${paths}
+      </svg>
+    </div>
+    <p class="statistics-note">Desliza horizontalmente para recorrer todas las jornadas.</p>
+  `;
 }
 
 function openUserDialog(userId = "") {
@@ -1160,7 +1289,7 @@ function renderAdmin() {
     .join("");
 
   $("#adminMatches").innerHTML = [...state.matches]
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
+    .sort(upcomingFirstSort)
     .map(
       (match) => `
         <div class="admin-match">
@@ -1835,6 +1964,7 @@ function renderAll() {
   renderMatchesPage();
   renderGroupPredictions();
   renderRanking();
+  renderStatistics();
   if (isAdmin()) renderAdmin();
 }
 
@@ -1939,7 +2069,7 @@ $("#shareReminder").addEventListener("click", sharePredictionReminder);
 
 window.addEventListener("hashchange", () => {
   const view = window.location.hash.slice(1);
-  if (["inicio", "partidos", "pronosticos", "ranking", "grupos", "admin"].includes(view)) navigate(view);
+  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(view)) navigate(view);
 });
 
 async function initializeApp() {
@@ -1950,7 +2080,7 @@ async function initializeApp() {
   assignAutomaticPredictions();
   renderAll();
   const initialView = window.location.hash.slice(1);
-  if (["inicio", "partidos", "pronosticos", "ranking", "grupos", "admin"].includes(initialView)) navigate(initialView);
+  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(initialView)) navigate(initialView);
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy

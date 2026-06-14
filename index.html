@@ -29,9 +29,10 @@
       <nav class="desktop-nav" aria-label="Navegación principal">
         <button class="nav-link active" data-view="inicio">Inicio</button>
         <button class="nav-link" data-view="partidos">Mi polla</button>
-        <button class="nav-link" data-view="pronosticos">Pronósticos</button>
+        <button class="nav-link" data-view="pronosticos">Histórico</button>
         <button class="nav-link" data-view="ranking">Ranking</button>
-        <button class="nav-link" data-view="grupos">Grupos</button>
+        <button class="nav-link" data-view="estadisticas">Estadísticas</button>
+        <button class="nav-link" data-view="grupos">Tabla de posiciones</button>
         <button class="nav-link admin-only hidden" data-view="admin">Administrar</button>
       </nav>
       <div class="header-actions">
@@ -149,7 +150,7 @@
 
       <section id="pronosticos" class="view">
         <div class="page-heading">
-          <span class="eyebrow">PRONÓSTICOS DEL GRUPO</span>
+          <span class="eyebrow">HISTÓRICO DEL GRUPO</span>
           <h1>¿Qué marcó cada uno?</h1>
           <p>Consulta los pronósticos de ayer, hoy y mañana. Los marcadores del grupo se revelan al cierre.</p>
         </div>
@@ -189,6 +190,15 @@
           </div>
           <div id="lastPlace" class="last-place-card"></div>
         </div>
+      </section>
+
+      <section id="estadisticas" class="view">
+        <div class="page-heading">
+          <span class="eyebrow">EVOLUCIÓN DEL RANKING</span>
+          <h1>La carrera, día a día</h1>
+          <p>Así ha cambiado la posición de cada participante después de cada jornada con resultados.</p>
+        </div>
+        <div id="rankingHistory" class="statistics-layout"></div>
       </section>
 
       <section id="grupos" class="view">
@@ -273,9 +283,10 @@
     <nav class="mobile-nav" aria-label="Navegación móvil">
       <button class="mobile-link active" data-view="inicio"><span>⌂</span>Inicio</button>
       <button class="mobile-link" data-view="partidos"><span>▦</span>Mi polla</button>
-      <button class="mobile-link" data-view="pronosticos"><span>◉</span>Grupo</button>
+      <button class="mobile-link" data-view="pronosticos"><span>◉</span>Histórico</button>
       <button class="mobile-link" data-view="ranking"><span>♛</span>Ranking</button>
-      <button class="mobile-link" data-view="grupos"><span>▤</span>Grupos</button>
+      <button class="mobile-link" data-view="estadisticas"><span>↗</span>Estadísticas</button>
+      <button class="mobile-link" data-view="grupos"><span>▤</span>Posiciones</button>
       <button class="mobile-link admin-only hidden" data-view="admin"><span>⚙</span>Admin</button>
     </nav>
 
