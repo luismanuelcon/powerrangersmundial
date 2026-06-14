@@ -36,26 +36,6 @@ const fixtureContext = { window: {} };
 vm.runInNewContext(readFileSync("fixtures.js", "utf8"), fixtureContext);
 const fixtures = fixtureContext.window.WORLD_CUP_GROUP_FIXTURES || [];
 
-async function ensureAutomaticPredictions() {
-  const closedIds = fixtures
-    .filter((match) => Date.now() >= new Date(match.kickoff).getTime() - 30 * 60_000)
-    .map((match) => match.id);
-  if (!closedIds.length) return;
-
-  await pool.query(
-    `
-      insert into prm_predictions (
-        user_id, match_id, home_score, away_score, automatic, saved_at
-      )
-      select u.id, m.match_id, 0, 0, true, now()
-      from prm_users u
-      cross join unnest($1::text[]) as m(match_id)
-      on conflict (user_id, match_id) do nothing
-    `,
-    [closedIds],
-  );
-}
-
 function sendJson(response, status, value, headers = {}) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -202,10 +182,13 @@ async function handleApi(request, response, pathname) {
   }
 
   if (request.method === "GET" && pathname === "/api/session") {
-    await ensureAutomaticPredictions();
     const { rows } = await pool.query("select id, name, nickname, role from prm_users order by name");
     const predictions = await pool.query(
-      "select user_id, match_id, home_score, away_score, automatic, saved_at from prm_predictions",
+      `
+        select user_id, match_id, home_score, away_score, automatic, saved_at
+        from prm_predictions
+        where automatic = false
+      `,
     );
     const results = await pool.query(
       "select match_id, home_score, away_score, status from prm_match_results",

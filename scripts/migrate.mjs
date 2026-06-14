@@ -51,9 +51,14 @@ try {
     create index if not exists prm_sessions_user_id_idx on prm_sessions(user_id);
     create index if not exists prm_sessions_expires_at_idx on prm_sessions(expires_at);
   `);
+  const deletedAutomatic = await client.query(
+    "delete from prm_predictions where automatic = true",
+  );
 
   await client.query("commit");
-  console.log("Migración de esquema completa. Los usuarios existentes no fueron modificados.");
+  console.log(
+    `Migración completa. Se eliminaron ${deletedAutomatic.rowCount} pronósticos automáticos.`,
+  );
 } catch (error) {
   await client.query("rollback");
   throw error;

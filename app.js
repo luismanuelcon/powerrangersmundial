@@ -33,6 +33,11 @@ function loadState() {
     const savedMatches = Array.isArray(saved.matches) ? saved.matches : [];
     const savedById = new Map(savedMatches.map((match) => [match.id, match]));
     const predictions = structuredClone(saved.predictions || {});
+    Object.values(predictions).forEach((userPredictions) => {
+      Object.entries(userPredictions).forEach(([matchId, prediction]) => {
+        if (prediction?.automatic) delete userPredictions[matchId];
+      });
+    });
     const officialIds = new Set(initialMatches.map((match) => match.id));
     const matches = initialMatches.map((official) => {
       const previous = savedById.get(official.id);
@@ -422,37 +427,14 @@ function isLocked(match) {
   return new Date() >= predictionDeadline(match) || ["IN_PLAY", "PAUSED", "FINISHED"].includes(match.status);
 }
 
-function assignAutomaticPredictions() {
-  let changed = false;
-
-  state.matches.forEach((match) => {
-    if (!isLocked(match)) return;
-
-    state.participants.forEach((person) => {
-      state.predictions[person.id] ||= {};
-      if (state.predictions[person.id][match.id]) return;
-
-      state.predictions[person.id][match.id] = {
-        home: 0,
-        away: 0,
-        savedAt: predictionDeadline(match).toISOString(),
-        automatic: true,
-      };
-      changed = true;
-    });
-  });
-
-  if (changed) saveState();
-  return changed;
-}
-
 function outcome(home, away) {
   if (home === away) return "DRAW";
   return home > away ? "HOME" : "AWAY";
 }
 
 function predictionFor(userId, matchId) {
-  return state.predictions[userId]?.[matchId] || null;
+  const prediction = state.predictions[userId]?.[matchId] || null;
+  return prediction?.automatic ? null : prediction;
 }
 
 function calculateStats(person) {
@@ -464,7 +446,7 @@ function calculateStats(person) {
 
   state.matches.forEach((match) => {
     const prediction = predictions[match.id];
-    if (!prediction) return;
+    if (!prediction || prediction.automatic) return;
     firstPredictionAt = Math.min(firstPredictionAt, new Date(prediction.savedAt).getTime());
     // Contar puntos para partidos FINISHED, IN_PLAY o PAUSED (con scores válidos)
     const validStatuses = ["FINISHED", "IN_PLAY", "PAUSED"];
@@ -492,7 +474,7 @@ function calculateStatsUntil(person, dateKey) {
   state.matches.forEach((match) => {
     if (bogotaDateKey(match.kickoff) > dateKey) return;
     const prediction = predictions[match.id];
-    if (!prediction) return;
+    if (!prediction || prediction.automatic) return;
     firstPredictionAt = Math.min(firstPredictionAt, new Date(prediction.savedAt).getTime());
     if (!["FINISHED", "IN_PLAY", "PAUSED"].includes(match.status)) return;
     if (match.homeScore == null || match.awayScore == null) return;
@@ -520,7 +502,7 @@ function calculateDayStats(person, dateStr = null) {
     const matchDate = bogotaDateKey(match.kickoff);
     if (matchDate !== targetDate) return;
     const prediction = predictions[match.id];
-    if (!prediction) return;
+    if (!prediction || prediction.automatic) return;
     if (match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "PAUSED") return;
     if (match.homeScore == null || match.awayScore == null) return;
 
@@ -579,6 +561,7 @@ async function restoreSession() {
     state.api = data.api || defaultState().api;
     state.predictions = {};
     for (const prediction of data.predictions || []) {
+      if (prediction.automatic) continue;
       state.predictions[prediction.user_id] ||= {};
       state.predictions[prediction.user_id][prediction.match_id] = {
         home: prediction.home_score,
@@ -663,13 +646,11 @@ function matchCard(match) {
             </div>`
       }
       <div class="saved-mark">${
-        prediction?.automatic
-          ? "0-0 asignado automáticamente"
-          : prediction
-            ? "✓ Pronóstico guardado"
-            : locked
-              ? "Pronóstico bloqueado"
-              : "Ingresa ambos marcadores"
+        prediction
+          ? "✓ Pronóstico guardado"
+          : locked
+            ? "Sin pronóstico"
+            : "Ingresa ambos marcadores"
       }</div>
       ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver predicciones</button>` : ""}
     </article>
@@ -677,7 +658,6 @@ function matchCard(match) {
 }
 
 function renderHome() {
-  assignAutomaticPredictions();
   const upcoming = [...state.matches]
     .filter((match) => match.status !== "FINISHED")
     .sort(upcomingFirstSort);
@@ -769,7 +749,7 @@ function listMatchCard(match) {
                ${
                  match.status === "FINISHED"
                    ? `<span class="result-badge">${resultBadge || `FINAL ${match.homeScore}:${match.awayScore}`}</span>`
-                   : `<span class="result-badge">${prediction?.automatic ? "0-0 AUTOMÁTICO" : "BLOQUEADO"}</span>`
+                   : `<span class="result-badge">${prediction ? "BLOQUEADO" : "SIN PRONÓSTICO"}</span>`
                }`
             : `<div class="list-prediction">
                 <input class="score-input" data-match="${match.id}" data-side="home" type="number" min="0" max="20" value="${prediction?.home ?? ""}" placeholder="–">
@@ -784,7 +764,6 @@ function listMatchCard(match) {
 }
 
 function renderMatchesPage() {
-  assignAutomaticPredictions();
   renderStageFilters();
   const filtered = state.matches
     .filter((match) => activeStage === "Todos" || match.stage === activeStage)
@@ -894,14 +873,11 @@ function openPredictionsDialog(matchId) {
         }
       }
 
-      const isAutomatic = prediction?.automatic ? '<span class="auto-badge">Auto</span>' : "";
-
       return `
         <div class="prediction-item ${person.id === state.currentUserId ? 'current-user' : ''}">
           <div class="prediction-user">
             ${participantAvatar(person, "pred-avatar")}
             <span class="pred-name">${escapeHtml(displayName(person))}</span>
-            ${isAutomatic}
           </div>
           <div class="prediction-score">
             <span class="pred-result">${predText}</span>
@@ -937,7 +913,6 @@ function groupPredictionRows(match) {
         <div class="group-prediction-row ${person.id === state.currentUserId ? "current-user" : ""}">
           ${participantAvatar(person, "pred-avatar")}
           <strong>${escapeHtml(displayName(person))}</strong>
-          ${prediction?.automatic ? '<span class="auto-badge">Auto</span>' : ""}
           <span class="group-prediction-score">${score}</span>
         </div>
       `;
@@ -1022,7 +997,6 @@ function renderGroupPredictions() {
 }
 
 function renderRanking() {
-  assignAutomaticPredictions();
   const ranking = getRanking();
   const podiumClasses = ["first", "second", "third"];
   const podiumMedals = [
@@ -1273,7 +1247,6 @@ async function loadAdminUsers() {
 
 function renderAdmin() {
   if (!isAdmin()) return;
-  assignAutomaticPredictions();
   const finished = state.matches.filter((match) => match.status === "FINISHED").length;
   const predictions = Object.values(state.predictions).reduce(
     (total, userPredictions) => total + Object.keys(userPredictions).length,
@@ -2077,7 +2050,6 @@ async function initializeApp() {
   if (authenticated && isAdmin()) {
     await loadAdminUsers().catch(console.error);
   }
-  assignAutomaticPredictions();
   renderAll();
   const initialView = window.location.hash.slice(1);
   if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(initialView)) navigate(initialView);
@@ -2095,13 +2067,7 @@ initializeApp();
 
 // Auto-refresh cada minuto
 setInterval(() => {
-  const changed = assignAutomaticPredictions();
   renderHome();
-  if (changed) {
-    if ($("#partidos").classList.contains("active-view")) renderMatchesPage();
-    if ($("#pronosticos").classList.contains("active-view")) renderGroupPredictions();
-    if ($("#admin").classList.contains("active-view")) renderAdmin();
-  }
   // Siempre actualizar ranking si está visible
   if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);

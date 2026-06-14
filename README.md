@@ -46,7 +46,7 @@ nombre, apodo, celular y cédula. El apodo es el nombre público del ranking.
 - Ganador o empate correcto: 1 punto.
 - Resultado incorrecto: 0 puntos.
 - Cada pronóstico cierra 30 minutos antes del partido.
-- Si un participante no pronostica antes del cierre, recibe automáticamente 0-0.
+- Si un participante no pronostica antes del cierre, ese partido no suma puntos.
 - Desempate: más exactos, luego el pronóstico registrado primero.
 - En eliminatorias se usa el marcador al finalizar la prórroga, sin penaltis.
 
