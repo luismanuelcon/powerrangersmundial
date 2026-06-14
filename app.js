@@ -734,15 +734,17 @@ function listMatchCard(match) {
 
   return `
     <article class="list-match-card">
-      <div class="list-match-time">
+      <div class="list-match-meta">
         <strong>${formatKickoff(match.kickoff)}</strong>
-        <small>${match.venue}</small>
+        <span>${escapeHtml(match.stage)}</span>
+        <small>${escapeHtml(match.venue)}</small>
       </div>
-      <div class="list-teams">
-        <div class="list-team"><span class="mini-flag">${flagMarkup(match.home, "small")}</span>${teamName(match.home)}</div>
-        <div class="list-team"><span class="mini-flag">${flagMarkup(match.away, "small")}</span>${teamName(match.away)}</div>
-      </div>
-      <div>
+      <div class="list-match-main">
+        <div class="list-match-team home">
+          <span class="mini-flag">${flagMarkup(match.home, "small")}</span>
+          <strong>${teamName(match.home)}</strong>
+        </div>
+        <div class="list-match-score">
         ${
           locked
             ? `<div class="locked-score">${prediction ? `${prediction.home} : ${prediction.away}` : "— : —"}</div>
@@ -757,6 +759,11 @@ function listMatchCard(match) {
                 <input class="score-input" data-match="${match.id}" data-side="away" type="number" min="0" max="20" value="${prediction?.away ?? ""}" placeholder="–">
               </div>`
         }
+        </div>
+        <div class="list-match-team away">
+          <strong>${teamName(match.away)}</strong>
+          <span class="mini-flag">${flagMarkup(match.away, "small")}</span>
+        </div>
       </div>
       ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver predicciones</button>` : ""}
     </article>

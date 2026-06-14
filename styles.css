@@ -824,48 +824,85 @@ main {
 }
 
 .list-match-card {
-  display: grid;
-  grid-template-columns: 105px 1fr 155px;
-  align-items: center;
-  gap: 20px;
-  padding: 18px 20px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
   background: var(--white);
 }
 
 .list-match-card .view-predictions-btn {
-  grid-column: 1 / -1;
-  margin-top: 10px;
+  margin-top: 8px;
   padding: 10px 16px;
   font-size: 11px;
 }
 
-.list-match-time strong,
-.list-match-time small {
-  display: block;
-}
-
-.list-match-time strong {
-  font: 17px "Archivo Black", sans-serif;
-}
-
-.list-match-time small {
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.list-teams {
+.list-match-meta {
   display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--muted);
+}
+
+.list-match-meta strong {
+  color: var(--white);
+  font: 14px "Archivo Black", sans-serif;
+  white-space: nowrap;
+}
+
+.list-match-meta span {
+  padding: 3px 6px;
+  color: var(--gold);
+  background: rgba(255,193,7,.08);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.list-match-meta small {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 9px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-match-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,.28);
+}
+
+.list-match-team {
+  min-width: 0;
+  display: flex;
+  align-items: center;
   gap: 7px;
 }
 
-.list-team {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 13px;
-  font-weight: 700;
+.list-match-team strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-match-team.away {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.list-match-score {
+  min-width: 78px;
+  text-align: center;
 }
 
 .mini-flag {
@@ -3613,43 +3650,47 @@ button {
   }
 
   #partidos .list-match-card {
-    grid-template-columns: 72px minmax(0, 1fr) 78px;
-    gap: 8px;
-    padding: 9px 10px;
+    padding: 7px;
     border-radius: 8px;
   }
 
-  #partidos .list-match-time {
-    min-width: 0;
+  #partidos .list-match-meta {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: 5px;
+    margin-bottom: 5px;
+    padding-inline: 2px;
   }
 
-  #partidos .list-match-time strong {
-    font-size: 12px;
+  #partidos .list-match-meta strong {
+    font-size: 10px;
     line-height: 1;
     white-space: nowrap;
   }
 
-  #partidos .list-match-time small {
-    margin-top: 2px;
+  #partidos .list-match-meta span {
+    padding: 2px 4px;
+    font-size: 6px;
+  }
+
+  #partidos .list-match-meta small {
     font-size: 7px;
-    line-height: 1.25;
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    white-space: nowrap;
   }
 
-  #partidos .list-teams {
-    gap: 4px;
+  #partidos .list-match-main {
+    grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+    gap: 5px;
+    min-height: 48px;
+    padding: 7px 8px;
   }
 
-  #partidos .list-team {
+  #partidos .list-match-team {
     gap: 5px;
     min-width: 0;
-    overflow: hidden;
+  }
+
+  #partidos .list-match-team strong {
     font-size: 10px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   #partidos .mini-flag {
@@ -3659,15 +3700,26 @@ button {
   }
 
   #partidos .locked-score {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   #partidos .result-badge {
+    margin-top: 3px;
     font-size: 7px;
   }
 
+  #partidos .list-match-score {
+    min-width: 76px;
+  }
+
+  #partidos .list-prediction {
+    grid-template-columns: 31px auto 31px;
+    justify-content: center;
+    gap: 4px;
+  }
+
   #partidos .list-prediction .score-input {
-    width: 32px;
+    width: 31px;
     height: 36px;
     padding: 0;
     font-size: 15px;
@@ -3791,21 +3843,34 @@ button {
 
 @media (max-width: 380px) {
   #partidos .list-match-card {
-    grid-template-columns: 64px minmax(0, 1fr) 72px;
-    gap: 6px;
-    padding-inline: 8px;
+    padding-inline: 6px;
   }
 
-  #partidos .list-match-time strong {
-    font-size: 11px;
+  #partidos .list-match-meta {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  #partidos .list-prediction {
-    gap: 3px;
+  #partidos .list-match-meta span {
+    display: none;
   }
 
-  #partidos .list-prediction .score-input {
-    width: 29px;
+  #partidos .list-match-main {
+    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
+    padding-inline: 6px;
+  }
+
+  #partidos .list-match-score {
+    min-width: 70px;
+  }
+
+  #partidos .list-match-team strong {
+    font-size: 9px;
+  }
+
+  #partidos .mini-flag {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
   }
 }
 
