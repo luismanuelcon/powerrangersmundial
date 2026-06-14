@@ -2372,27 +2372,58 @@ button {
 
 #ranking .today-matches-section {
   margin-bottom: 10px;
-  padding: 7px 12px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 14px;
+  padding: 10px 12px;
 }
 
 #ranking .today-matches-header {
-  margin-bottom: 0;
-  padding: 0 14px 0 0;
-  border-right: 1px solid rgba(255, 193, 7, 0.15);
-  border-bottom: 0;
+  margin-bottom: 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid rgba(255, 193, 7, 0.15);
 }
 
 #ranking .today-matches-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: 8px;
 }
 
 #ranking .today-match {
-  padding: 5px 8px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+#ranking .today-teams {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+#ranking .today-team {
+  min-width: 0;
+  gap: 6px;
+  font-size: 11px;
+}
+
+#ranking .today-team span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#ranking .today-team:last-child span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#ranking .today-score {
+  min-width: 58px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+#ranking .today-status {
+  margin-top: 5px;
+  font-size: 8px;
 }
 
 #ranking .ranking-layout {
@@ -2533,13 +2564,13 @@ button {
 
   #ranking .today-matches-section {
     margin: 0 14px 8px;
-    padding: 7px 9px;
+    padding: 8px;
     display: block;
   }
 
   #ranking .today-matches-header {
-    margin-bottom: 5px;
-    padding-bottom: 5px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
     padding-right: 0;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 193, 7, 0.15);
@@ -2551,18 +2582,46 @@ button {
   }
 
   #ranking .today-match {
-    padding: 4px 7px;
+    padding: 8px;
+    border-radius: 7px;
+  }
+
+  #ranking .today-teams {
+    grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
+    gap: 5px;
+    text-align: left;
   }
 
   #ranking .today-team {
+    min-width: 0;
+    justify-content: flex-start;
     gap: 5px;
     font-size: 10px;
+    line-height: 1.15;
+  }
+
+  #ranking .today-team:last-child {
+    justify-content: flex-end;
+    flex-direction: row;
+    text-align: right;
   }
 
   #ranking .today-flag,
   #ranking .today-flag img {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+  }
+
+  #ranking .today-score {
+    min-width: 52px;
+    padding: 0;
+    font-size: 17px;
+  }
+
+  #ranking .today-status {
+    margin-top: 4px;
+    font-size: 7px;
   }
 
   #ranking .ranking-layout {
@@ -2654,6 +2713,34 @@ button {
 
   #ranking .points-cell {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  #ranking .today-matches-section {
+    margin-inline: 8px;
+  }
+
+  #ranking .today-teams {
+    grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  #ranking .today-team {
+    gap: 3px;
+    font-size: 9px;
+  }
+
+  #ranking .today-flag,
+  #ranking .today-flag img {
+    width: 15px;
+    height: 15px;
+    flex-basis: 15px;
+  }
+
+  #ranking .today-score {
+    min-width: 46px;
+    font-size: 15px;
   }
 }
 
