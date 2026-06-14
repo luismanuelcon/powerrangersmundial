@@ -1233,6 +1233,67 @@ main {
   color: var(--green);
 }
 
+.today-watch {
+  min-height: 16px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.today-watch-label {
+  color: var(--muted);
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.today-watch-icons {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.channel-icon {
+  width: 15px;
+  height: 15px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.45);
+  border-radius: 4px;
+  color: #fff;
+  font: 900 7px/1 "DM Sans", sans-serif;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+}
+
+.channel-icon.directv {
+  background: linear-gradient(145deg, #35a9e8, #07549c);
+}
+
+.channel-icon.caracol {
+  border-radius: 50%;
+  color: #101010;
+  background: radial-gradient(circle, #fff 0 26%, #ffd500 28% 55%, #f36f21 57%);
+}
+
+.channel-icon.rcn {
+  color: #fff;
+  background: linear-gradient(145deg, #1c84d1, #173c8f);
+}
+
+.channel-icon.win {
+  color: #111;
+  background: linear-gradient(145deg, #ffe100, #ff8a00);
+}
+
+.channel-icon.disney {
+  color: #fff;
+  background: linear-gradient(145deg, #132f83, #07184d);
+}
+
 /* Last Place Card */
 .last-place-card {
   margin-top: 24px;
@@ -2659,6 +2720,27 @@ button {
   #ranking .today-status {
     margin-top: 4px;
     font-size: 7px;
+  }
+
+  #ranking .today-watch {
+    min-height: 13px;
+    margin-top: 2px;
+    gap: 4px;
+  }
+
+  #ranking .today-watch-label {
+    font-size: 5px;
+  }
+
+  #ranking .today-watch-icons {
+    gap: 2px;
+  }
+
+  #ranking .channel-icon {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    font-size: 6px;
   }
 
   #ranking .ranking-layout {

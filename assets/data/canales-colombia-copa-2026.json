@@ -1,0 +1,810 @@
+{
+"canalesDisponibles":
+    [
+    "DIRECTV",
+    "Caracol TV",
+    "RCN TV",
+    "Win Sports",
+    "Disney+"
+    ],
+"fase": "Fase de grupos",
+"paisTransmision": "Colombia",
+"partidos":
+    [
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "M\u00e9xico",
+        "equipo2": "Sud\u00e1frica",
+        "fecha": "2026-06-11",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Corea del Sur",
+        "equipo2": "Chequia",
+        "fecha": "2026-06-11",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Canad\u00e1",
+        "equipo2": "Bosnia y Herzegovina",
+        "fecha": "2026-06-12",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Estados Unidos",
+        "equipo2": "Paraguay",
+        "fecha": "2026-06-12",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Catar",
+        "equipo2": "Suiza",
+        "fecha": "2026-06-13",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Brasil",
+        "equipo2": "Marruecos",
+        "fecha": "2026-06-13",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Hait\u00ed",
+        "equipo2": "Escocia",
+        "fecha": "2026-06-13",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Australia",
+        "equipo2": "Turqu\u00eda",
+        "fecha": "2026-06-13",
+        "hora": "23:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Alemania",
+        "equipo2": "Curazao",
+        "fecha": "2026-06-14",
+        "hora": "12:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Pa\u00edses Bajos",
+        "equipo2": "Jap\u00f3n",
+        "fecha": "2026-06-14",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Costa Marfil",
+        "equipo2": "Ecuador",
+        "fecha": "2026-06-14",
+        "hora": "18:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Suecia",
+        "equipo2": "T\u00fanez",
+        "fecha": "2026-06-14",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Espa\u00f1a",
+        "equipo2": "Cabo Verde",
+        "fecha": "2026-06-15",
+        "hora": "11:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "B\u00e9lgica",
+        "equipo2": "Egipto",
+        "fecha": "2026-06-15",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Arabia Saud\u00ed",
+        "equipo2": "Uruguay",
+        "fecha": "2026-06-15",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "RI de Ir\u00e1n",
+        "equipo2": "Nueva Zelanda",
+        "fecha": "2026-06-15",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Francia",
+        "equipo2": "Senegal",
+        "fecha": "2026-06-16",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Irak",
+        "equipo2": "Noruega",
+        "fecha": "2026-06-16",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Argentina",
+        "equipo2": "Argelia",
+        "fecha": "2026-06-16",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Austria",
+        "equipo2": "Jordania",
+        "fecha": "2026-06-16",
+        "hora": "23:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Portugal",
+        "equipo2": "RD Congo",
+        "fecha": "2026-06-17",
+        "hora": "12:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Inglaterra",
+        "equipo2": "Croacia",
+        "fecha": "2026-06-17",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Ghana",
+        "equipo2": "Panam\u00e1",
+        "fecha": "2026-06-17",
+        "hora": "18:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Uzbekist\u00e1n",
+        "equipo2": "Colombia",
+        "fecha": "2026-06-17",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Chequia",
+        "equipo2": "Sud\u00e1frica",
+        "fecha": "2026-06-18",
+        "hora": "11:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Suiza",
+        "equipo2": "Bosnia y Herzegovina",
+        "fecha": "2026-06-18",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Canad\u00e1",
+        "equipo2": "Catar",
+        "fecha": "2026-06-18",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "M\u00e9xico",
+        "equipo2": "Corea del Sur",
+        "fecha": "2026-06-18",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Estados Unidos",
+        "equipo2": "Australia",
+        "fecha": "2026-06-19",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV"
+            ],
+        "equipo1": "Escocia",
+        "equipo2": "Marruecos",
+        "fecha": "2026-06-19",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Brasil",
+        "equipo2": "Hait\u00ed",
+        "fecha": "2026-06-19",
+        "hora": "19:30"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Turqu\u00eda",
+        "equipo2": "Paraguay",
+        "fecha": "2026-06-19",
+        "hora": "22:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Pa\u00edses Bajos",
+        "equipo2": "Suecia",
+        "fecha": "2026-06-20",
+        "hora": "12:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Alemania",
+        "equipo2": "Costa Marfil",
+        "fecha": "2026-06-20",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Ecuador",
+        "equipo2": "Curazao",
+        "fecha": "2026-06-20",
+        "hora": "19:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "T\u00fanez",
+        "equipo2": "Jap\u00f3n",
+        "fecha": "2026-06-20",
+        "hora": "23:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Espa\u00f1a",
+        "equipo2": "Arabia Saud\u00ed",
+        "fecha": "2026-06-21",
+        "hora": "11:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "B\u00e9lgica",
+        "equipo2": "RI de Ir\u00e1n",
+        "fecha": "2026-06-21",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Uruguay",
+        "equipo2": "Cabo Verde",
+        "fecha": "2026-06-21",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Nueva Zelanda",
+        "equipo2": "Egipto",
+        "fecha": "2026-06-21",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Argentina",
+        "equipo2": "Austria",
+        "fecha": "2026-06-22",
+        "hora": "12:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Francia",
+        "equipo2": "Irak",
+        "fecha": "2026-06-22",
+        "hora": "16:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Noruega",
+        "equipo2": "Senegal",
+        "fecha": "2026-06-22",
+        "hora": "19:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Jordania",
+        "equipo2": "Argelia",
+        "fecha": "2026-06-22",
+        "hora": "22:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Portugal",
+        "equipo2": "Uzbekist\u00e1n",
+        "fecha": "2026-06-23",
+        "hora": "12:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Inglaterra",
+        "equipo2": "Ghana",
+        "fecha": "2026-06-23",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Panam\u00e1",
+        "equipo2": "Croacia",
+        "fecha": "2026-06-23",
+        "hora": "18:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Colombia",
+        "equipo2": "RD Congo",
+        "fecha": "2026-06-23",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Suiza",
+        "equipo2": "Canad\u00e1",
+        "fecha": "2026-06-24",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Bosnia y Herzegovina",
+        "equipo2": "Catar",
+        "fecha": "2026-06-24",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Escocia",
+        "equipo2": "Brasil",
+        "fecha": "2026-06-24",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Marruecos",
+        "equipo2": "Hait\u00ed",
+        "fecha": "2026-06-24",
+        "hora": "17:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Chequia",
+        "equipo2": "M\u00e9xico",
+        "fecha": "2026-06-24",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Sud\u00e1frica",
+        "equipo2": "Corea del Sur",
+        "fecha": "2026-06-24",
+        "hora": "20:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Ecuador",
+        "equipo2": "Alemania",
+        "fecha": "2026-06-25",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Curazao",
+        "equipo2": "Costa Marfil",
+        "fecha": "2026-06-25",
+        "hora": "15:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "T\u00fanez",
+        "equipo2": "Pa\u00edses Bajos",
+        "fecha": "2026-06-25",
+        "hora": "18:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Jap\u00f3n",
+        "equipo2": "Suecia",
+        "fecha": "2026-06-25",
+        "hora": "18:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Turqu\u00eda",
+        "equipo2": "Estados Unidos",
+        "fecha": "2026-06-25",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Paraguay",
+        "equipo2": "Australia",
+        "fecha": "2026-06-25",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports"
+            ],
+        "equipo1": "Noruega",
+        "equipo2": "Francia",
+        "fecha": "2026-06-26",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Senegal",
+        "equipo2": "Irak",
+        "fecha": "2026-06-26",
+        "hora": "14:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Uruguay",
+        "equipo2": "Espa\u00f1a",
+        "fecha": "2026-06-26",
+        "hora": "19:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Cabo Verde",
+        "equipo2": "Arabia Saud\u00ed",
+        "fecha": "2026-06-26",
+        "hora": "19:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Nueva Zelanda",
+        "equipo2": "B\u00e9lgica",
+        "fecha": "2026-06-26",
+        "hora": "22:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Egipto",
+        "equipo2": "RI de Ir\u00e1n",
+        "fecha": "2026-06-26",
+        "hora": "22:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Panam\u00e1",
+        "equipo2": "Inglaterra",
+        "fecha": "2026-06-27",
+        "hora": "16:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Croacia",
+        "equipo2": "Ghana",
+        "fecha": "2026-06-27",
+        "hora": "16:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Caracol TV",
+            "RCN TV",
+            "Disney+"
+            ],
+        "equipo1": "Colombia",
+        "equipo2": "Portugal",
+        "fecha": "2026-06-27",
+        "hora": "18:30"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "RD Congo",
+        "equipo2": "Uzbekist\u00e1n",
+        "fecha": "2026-06-27",
+        "hora": "18:30"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV",
+            "Win Sports",
+            "Disney+"
+            ],
+        "equipo1": "Jordania",
+        "equipo2": "Argentina",
+        "fecha": "2026-06-27",
+        "hora": "21:00"
+        },
+        {
+        "canales":
+            [
+            "DIRECTV"
+            ],
+        "equipo1": "Argelia",
+        "equipo2": "Austria",
+        "fecha": "2026-06-27",
+        "hora": "21:00"
+        }
+    ],
+"torneo": "Copa Mundial de la FIFA 2026"
+}

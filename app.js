@@ -104,6 +104,7 @@ let groupPredictionsDateFilter = "window";
 let reminderMatchId = "";
 let toastTimer;
 let adminUsers = [];
+let broadcastSchedule = [];
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -370,6 +371,71 @@ function normalizeCountryName(name) {
     "cote divoire": "ivory coast",
   };
   return aliases[normalized] || normalized;
+}
+
+function broadcastTeamKey(name) {
+  const normalized = String(name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(ri|de|del|la|el)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    congodr: "rdcongo",
+    drcongo: "rdcongo",
+    republicademocraticacongo: "rdcongo",
+    ivorycoast: "costamarfil",
+    cotedivoire: "costamarfil",
+  };
+  return aliases[normalized] || normalized;
+}
+
+async function loadBroadcastSchedule() {
+  try {
+    const response = await fetch("assets/data/canales-colombia-copa-2026.json");
+    if (!response.ok) return;
+    const data = await response.json();
+    broadcastSchedule = Array.isArray(data.partidos) ? data.partidos : [];
+  } catch (error) {
+    console.error("Broadcast schedule error:", error);
+  }
+}
+
+function channelsForMatch(match) {
+  const date = bogotaDateKey(match.kickoff);
+  const home = broadcastTeamKey(teamName(match.home));
+  const away = broadcastTeamKey(teamName(match.away));
+  const broadcast = broadcastSchedule.find((item) => {
+    if (item.fecha !== date) return false;
+    const first = broadcastTeamKey(item.equipo1);
+    const second = broadcastTeamKey(item.equipo2);
+    return (first === home && second === away) || (first === away && second === home);
+  });
+  return broadcast?.canales || [];
+}
+
+function channelIconMarkup(channel) {
+  const channelIcons = {
+    DIRECTV: { className: "directv", label: "D" },
+    "Caracol TV": { className: "caracol", label: "C" },
+    "RCN TV": { className: "rcn", label: "R" },
+    "Win Sports": { className: "win", label: "W" },
+    "Disney+": { className: "disney", label: "D+" },
+  };
+  const icon = channelIcons[channel];
+  if (!icon) return "";
+  return `<span class="channel-icon ${icon.className}" title="${escapeHtml(channel)}" aria-label="${escapeHtml(channel)}">${icon.label}</span>`;
+}
+
+function watchChannelsMarkup(match) {
+  const channels = channelsForMatch(match);
+  if (!channels.length) return "";
+  return `
+    <div class="today-watch" aria-label="Dónde ver en Colombia">
+      <span class="today-watch-label">DÓNDE VER</span>
+      <span class="today-watch-icons">${channels.map(channelIconMarkup).join("")}</span>
+    </div>
+  `;
 }
 
 function flagMarkup(name, size = "large") {
@@ -1050,6 +1116,7 @@ function renderRanking() {
                 </div>
               </div>
               ${statusText ? `<span class="today-status">${statusText}</span>` : ""}
+              ${watchChannelsMarkup(match)}
             </div>
           `;
         }).join("")}
@@ -2053,6 +2120,7 @@ window.addEventListener("hashchange", () => {
 });
 
 async function initializeApp() {
+  await loadBroadcastSchedule();
   const authenticated = await restoreSession();
   if (authenticated && isAdmin()) {
     await loadAdminUsers().catch(console.error);
