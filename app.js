@@ -1148,21 +1148,26 @@ function renderRanking() {
 
   $("#rankingBody").innerHTML = ranking
     .map(
-      (person, index) => `
-        <tr class="${index === ranking.length - 1 ? "ranking-last-place" : ""}" style="--participant-row-color:${participantColor(person)}">
+      (person, index) => {
+        const isLast = index === ranking.length - 1;
+        const isWarning = ranking.length > 1 && index === ranking.length - 2;
+        return `
+        <tr class="${isLast ? "ranking-last-place" : isWarning ? "ranking-warning-place" : ""}" style="--participant-row-color:${participantColor(person)}">
           <td><strong>#${index + 1}</strong></td>
           <td>
             <div class="ranking-person">
               ${participantAvatar(person, "table-avatar")}
               <span class="ranking-name">${escapeHtml(displayName(person))}</span>
               ${person.id === state.currentUserId ? '<span class="you-badge">TÚ</span>' : ""}
-              ${index === ranking.length - 1 ? '<span class="last-place-badge">LA PERRA DEL MUNDIAL</span>' : ""}
+              ${isWarning ? '<span class="warning-place-badge">CUIDADO LOCO</span>' : ""}
+              ${isLast ? '<span class="last-place-badge">LA PERRA DEL MUNDIAL</span>' : ""}
             </div>
           </td>
           <td>${person.exact}</td>
           <td>${person.correct}</td>
           <td class="points-cell">${person.points}</td>
-        </tr>`,
+        </tr>`;
+      },
     )
     .join("");
 
