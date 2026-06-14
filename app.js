@@ -432,7 +432,12 @@ function watchChannelsMarkup(match) {
   if (!channels.length) return "";
   return `
     <div class="today-watch" aria-label="Dónde ver en Colombia">
-      <span class="today-watch-label">DÓNDE VER</span>
+      <span class="today-watch-label" title="Dónde ver en Colombia" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"></path>
+          <circle cx="12" cy="12" r="2.6"></circle>
+        </svg>
+      </span>
       <span class="today-watch-icons">${channels.map(channelIconMarkup).join("")}</span>
     </div>
   `;
