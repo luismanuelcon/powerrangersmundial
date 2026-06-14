@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node server.mjs",
     "migrate": "node scripts/migrate.mjs",
-    "seed:users": "node scripts/seed-users.mjs"
+    "seed:users": "node scripts/seed-users.mjs",
+    "test:prediction-rule": "node scripts/verify-prediction-rule.mjs"
   },
   "dependencies": {
     "pg": "^8.16.3"
