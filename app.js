@@ -1194,7 +1194,7 @@ function renderStatistics() {
         ${paths}
       </svg>
     </div>
-    <p class="statistics-note">Desliza horizontalmente para recorrer todas las jornadas.</p>
+    <p class="statistics-note">Cada color representa la evolución diaria de un participante.</p>
   `;
 }
 
@@ -2052,7 +2052,11 @@ async function initializeApp() {
   }
   renderAll();
   const initialView = window.location.hash.slice(1);
-  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(initialView)) navigate(initialView);
+  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(initialView)) {
+    navigate(initialView);
+  } else {
+    navigate("ranking");
+  }
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy

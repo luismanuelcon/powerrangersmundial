@@ -19,7 +19,7 @@
   <body>
     <div class="noise" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="brand" href="#inicio" aria-label="Power Rangers Mundial, inicio">
+      <a class="brand" href="#ranking" aria-label="Power Rangers Mundial, ranking">
         <img class="brand-logo" src="assets/logo-power-rangers-mundial.png" alt="" />
         <span>
           <strong>POWER RANGERS</strong>
@@ -27,10 +27,10 @@
         </span>
       </a>
       <nav class="desktop-nav" aria-label="Navegación principal">
-        <button class="nav-link active" data-view="inicio">Inicio</button>
+        <button class="nav-link" data-view="inicio">Inicio</button>
         <button class="nav-link" data-view="partidos">Mi polla</button>
         <button class="nav-link" data-view="pronosticos">Histórico</button>
-        <button class="nav-link" data-view="ranking">Ranking</button>
+        <button class="nav-link active" data-view="ranking">Ranking</button>
         <button class="nav-link" data-view="estadisticas">Estadísticas</button>
         <button class="nav-link" data-view="grupos">Tabla de posiciones</button>
         <button class="nav-link admin-only hidden" data-view="admin">Administrar</button>
@@ -47,7 +47,7 @@
     </header>
 
     <main>
-      <section id="inicio" class="view active-view">
+      <section id="inicio" class="view">
         <div class="hero">
           <div class="hero-overlay" aria-hidden="true"></div>
           <div class="hero-copy">
@@ -160,16 +160,20 @@
         <div id="groupPredictionsList" class="group-predictions-list"></div>
       </section>
 
-      <section id="ranking" class="view">
+      <section id="ranking" class="view active-view">
         <div class="page-heading ranking-heading">
           <div>
             <span class="eyebrow">TABLA GENERAL</span>
             <h1>¿Quién manda aquí?</h1>
             <p>En empate, gana quien tenga más exactos y luego quien pronosticó primero.</p>
           </div>
-          <button id="shareRanking" class="whatsapp-button">
-            <span>◉</span> Compartir en WhatsApp
-          </button>
+          <div class="ranking-actions">
+            <button class="ranking-shortcut" data-go="partidos">Mi polla</button>
+            <button class="ranking-shortcut" data-go="pronosticos">Ver pronósticos</button>
+            <button id="shareRanking" class="whatsapp-button">
+              <span>◉</span> Compartir
+            </button>
+          </div>
         </div>
         <div id="todayMatches" class="today-matches-section"></div>
         <div class="ranking-layout">
@@ -281,11 +285,22 @@
     </main>
 
     <nav class="mobile-nav" aria-label="Navegación móvil">
-      <button class="mobile-link active" data-view="inicio"><span>⌂</span>Inicio</button>
+      <button class="mobile-link" data-view="inicio"><span>⌂</span>Inicio</button>
       <button class="mobile-link" data-view="partidos"><span>▦</span>Mi polla</button>
       <button class="mobile-link" data-view="pronosticos"><span>◉</span>Histórico</button>
-      <button class="mobile-link" data-view="ranking"><span>♛</span>Ranking</button>
-      <button class="mobile-link" data-view="estadisticas"><span>↗</span>Estadísticas</button>
+      <button class="mobile-link active" data-view="ranking"><span>♛</span>Ranking</button>
+      <button class="mobile-link" data-view="estadisticas">
+        <span class="statistics-nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M4 18V6M4 18h16M7 14l4-4 3 2 5-6"></path>
+            <circle cx="7" cy="14" r="1.4"></circle>
+            <circle cx="11" cy="10" r="1.4"></circle>
+            <circle cx="14" cy="12" r="1.4"></circle>
+            <circle cx="19" cy="6" r="1.4"></circle>
+          </svg>
+        </span>
+        Estadísticas
+      </button>
       <button class="mobile-link" data-view="grupos"><span>▤</span>Posiciones</button>
       <button class="mobile-link admin-only hidden" data-view="admin"><span>⚙</span>Admin</button>
     </nav>

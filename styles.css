@@ -3471,3 +3471,393 @@ button {
     flex: 0 0 72px;
   }
 }
+
+/* Mobile-first navigation, ranking actions and compact content cards */
+.ranking-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ranking-shortcut {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(255,193,7,.35);
+  color: var(--gold-light);
+  background: rgba(255,193,7,.06);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.statistics-nav-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.statistics-nav-icon svg circle {
+  fill: currentColor;
+  stroke: #090909;
+  stroke-width: .8;
+}
+
+@media (max-width: 760px) {
+  .mobile-nav {
+    overflow-x: hidden;
+  }
+
+  .mobile-link {
+    flex: 1 1 0;
+    min-width: 46px;
+    padding-inline: 2px;
+    font-size: 7px;
+  }
+
+  .mobile-link span {
+    font-size: 17px;
+  }
+
+  .statistics-nav-icon {
+    width: 22px;
+    height: 22px;
+    margin: 0 auto 2px;
+    display: block;
+  }
+
+  #ranking .ranking-heading {
+    align-items: center;
+  }
+
+  #ranking .ranking-actions {
+    flex: 0 0 auto;
+    gap: 5px;
+  }
+
+  #ranking .ranking-shortcut,
+  #ranking .whatsapp-button {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  #ranking .ranking-shortcut:nth-child(2) {
+    display: none;
+  }
+
+  #partidos .page-heading,
+  #pronosticos .page-heading {
+    padding: 18px 14px 12px;
+  }
+
+  #partidos .page-heading h1,
+  #pronosticos .page-heading h1 {
+    margin: 4px 0 6px;
+    font-size: 30px;
+  }
+
+  #partidos .page-heading p,
+  #pronosticos .page-heading p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  #partidos .toolbar,
+  #pronosticos .toolbar {
+    padding: 8px 14px 10px;
+    gap: 8px;
+  }
+
+  #partidos .filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  #partidos .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  #partidos .filter-button,
+  #pronosticos .filter-button {
+    min-height: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    padding-inline: 12px;
+    font-size: 10px;
+  }
+
+  #partidos .search-field {
+    height: 40px;
+  }
+
+  #partidos .matches-list {
+    padding: 0 8px 78px;
+  }
+
+  #partidos .date-group {
+    margin-bottom: 14px;
+  }
+
+  #partidos .date-matches {
+    gap: 6px;
+  }
+
+  #partidos .list-match-card {
+    grid-template-columns: 54px minmax(0, 1fr) 76px;
+    gap: 7px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  #partidos .list-match-time strong {
+    font-size: 12px;
+  }
+
+  #partidos .list-match-time small {
+    margin-top: 2px;
+    font-size: 7px;
+    line-height: 1.2;
+  }
+
+  #partidos .list-teams {
+    gap: 4px;
+  }
+
+  #partidos .list-team {
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #partidos .mini-flag {
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
+  }
+
+  #partidos .locked-score {
+    font-size: 15px;
+  }
+
+  #partidos .result-badge {
+    font-size: 7px;
+  }
+
+  #partidos .list-prediction .score-input {
+    width: 28px;
+    height: 36px;
+    padding: 0;
+  }
+
+  #partidos .list-match-card .view-predictions-btn {
+    min-height: 28px;
+    margin-top: 1px;
+    padding: 5px 8px;
+    font-size: 8px;
+  }
+
+  #pronosticos .group-predictions-list {
+    padding: 0 8px 78px;
+  }
+
+  #pronosticos .group-prediction-day + .group-prediction-day {
+    margin-top: 14px;
+  }
+
+  #pronosticos .group-prediction-grid {
+    gap: 8px;
+  }
+
+  #pronosticos .group-prediction-card {
+    border-radius: 8px;
+  }
+
+  #pronosticos .group-prediction-match {
+    padding: 9px 10px 7px;
+    gap: 8px;
+  }
+
+  #pronosticos .group-prediction-match small {
+    margin-top: 4px;
+    font-size: 8px;
+  }
+
+  #pronosticos .group-prediction-status {
+    padding: 4px 6px;
+    font-size: 8px;
+  }
+
+  #pronosticos .group-prediction-teams {
+    margin: 0 10px 6px;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  #pronosticos .group-prediction-teams span {
+    min-width: 0;
+    gap: 5px;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #pronosticos .group-prediction-rows {
+    padding: 0 10px 8px;
+  }
+
+  #pronosticos .group-prediction-row {
+    min-height: 34px;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  #pronosticos .group-prediction-row .pred-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 8px;
+  }
+
+  #pronosticos .group-prediction-score {
+    min-width: 72px;
+    font-size: 12px;
+  }
+
+  #predictionsDialog {
+    width: calc(100% - 16px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  #predictionsDialog .predictions-header {
+    padding: 18px 18px 12px;
+  }
+
+  #predictionsDialog .predictions-header h2 {
+    margin: 4px 0 7px;
+    font-size: 20px;
+  }
+
+  #predictionsDialog .predictions-list {
+    max-height: 58dvh;
+    padding: 8px 10px 12px;
+  }
+
+  #predictionsDialog .prediction-item {
+    min-height: 38px;
+    margin-bottom: 4px;
+    padding: 5px 7px;
+    border-radius: 7px;
+  }
+
+  #predictionsDialog .pred-avatar {
+    width: 26px;
+    height: 26px;
+  }
+
+  #predictionsDialog .pred-name {
+    font-size: 11px;
+  }
+
+  #predictionsDialog .pred-result {
+    min-width: 54px;
+    font-size: 13px;
+  }
+}
+
+/* Statistics uses the complete mobile viewport without horizontal scrolling. */
+@media (max-width: 760px) {
+  #estadisticas.active-view {
+    height: calc(100dvh - 66px - 68px - env(safe-area-inset-bottom));
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #estadisticas .page-heading {
+    flex: 0 0 auto;
+    padding: 12px 14px 8px;
+  }
+
+  #estadisticas .page-heading .eyebrow {
+    display: none;
+  }
+
+  #estadisticas .page-heading h1 {
+    margin: 0 0 3px;
+    font-size: 25px;
+  }
+
+  #estadisticas .page-heading p {
+    margin: 0;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #estadisticas .statistics-layout {
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 7px 8px 6px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #estadisticas .statistics-legend {
+    flex: 0 0 35px;
+    gap: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  #estadisticas .statistics-legend::-webkit-scrollbar {
+    display: none;
+  }
+
+  #estadisticas .legend-person {
+    gap: 4px;
+    padding: 3px 7px 3px 3px;
+    font-size: 9px;
+  }
+
+  #estadisticas .legend-avatar {
+    width: 25px;
+    height: 25px;
+  }
+
+  #estadisticas .history-chart-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    border-radius: 10px;
+  }
+
+  #estadisticas .history-chart {
+    width: 100% !important;
+    height: 100%;
+    min-height: 0;
+  }
+
+  #estadisticas .statistics-note {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+    font-size: 8px;
+  }
+}
