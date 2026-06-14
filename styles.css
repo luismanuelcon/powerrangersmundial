@@ -3613,20 +3613,30 @@ button {
   }
 
   #partidos .list-match-card {
-    grid-template-columns: 54px minmax(0, 1fr) 76px;
-    gap: 7px;
-    padding: 8px;
+    grid-template-columns: 72px minmax(0, 1fr) 78px;
+    gap: 8px;
+    padding: 9px 10px;
     border-radius: 8px;
+  }
+
+  #partidos .list-match-time {
+    min-width: 0;
   }
 
   #partidos .list-match-time strong {
     font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   #partidos .list-match-time small {
     margin-top: 2px;
     font-size: 7px;
-    line-height: 1.2;
+    line-height: 1.25;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   #partidos .list-teams {
@@ -3657,9 +3667,10 @@ button {
   }
 
   #partidos .list-prediction .score-input {
-    width: 28px;
+    width: 32px;
     height: 36px;
     padding: 0;
+    font-size: 15px;
   }
 
   #partidos .list-match-card .view-predictions-btn {
@@ -3775,6 +3786,26 @@ button {
   #predictionsDialog .pred-result {
     min-width: 54px;
     font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  #partidos .list-match-card {
+    grid-template-columns: 64px minmax(0, 1fr) 72px;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  #partidos .list-match-time strong {
+    font-size: 11px;
+  }
+
+  #partidos .list-prediction {
+    gap: 3px;
+  }
+
+  #partidos .list-prediction .score-input {
+    width: 29px;
   }
 }
 
