@@ -1185,7 +1185,7 @@ function renderStatistics() {
         </div>`).join("")}
     </div>
     <div class="history-chart-scroll">
-      <svg class="history-chart" style="width:${width}px" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolución diaria de posiciones">
+      <svg class="history-chart" style="width:${width}px" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Evolución diaria de posiciones">
         ${state.participants.map((_, index) => `
           <line x1="${left}" y1="${y(index + 1)}" x2="${width - right}" y2="${y(index + 1)}" class="chart-grid-line"/>
           <text x="22" y="${y(index + 1) + 5}" class="chart-rank">#${index + 1}</text>`).join("")}
