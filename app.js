@@ -105,6 +105,8 @@ let reminderMatchId = "";
 let toastTimer;
 let adminUsers = [];
 let broadcastSchedule = [];
+let rankingDragTimer;
+let lastRankingDragAt = 0;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -1207,6 +1209,40 @@ function renderRanking() {
   } else {
     $("#lastPlace").innerHTML = "";
   }
+  playRankingDragAnimation(ranking);
+}
+
+function playRankingDragAnimation(ranking) {
+  const container = $("#rankingDragAnimation");
+  if (!container || !ranking.length || !$("#ranking").classList.contains("active-view")) return;
+
+  const now = Date.now();
+  if (now - lastRankingDragAt < 7000) return;
+  lastRankingDragAt = now;
+
+  const lastPerson = ranking[ranking.length - 1];
+  const name = escapeHtml(displayName(lastPerson));
+  container.innerHTML = `
+    <div class="ranking-drag-stage" style="--participant-color:${participantColor(lastPerson)}">
+      <div class="ranking-drag-avatar">
+        ${participantAvatar(lastPerson, "ranking-drag-photo")}
+        <span>${name}</span>
+      </div>
+      <div class="ranking-drag-rope"></div>
+      <img class="ranking-drag-runner" src="assets/animations/perra-run.gif" alt="" loading="eager" decoding="async">
+      <div class="ranking-drag-caption">La perra del mundial va remolcando al último puesto</div>
+    </div>
+  `;
+
+  container.classList.remove("is-playing");
+  void container.offsetWidth;
+  container.classList.add("is-playing");
+
+  clearTimeout(rankingDragTimer);
+  rankingDragTimer = setTimeout(() => {
+    container.classList.remove("is-playing");
+    container.innerHTML = "";
+  }, 3900);
 }
 
 function renderStatistics() {

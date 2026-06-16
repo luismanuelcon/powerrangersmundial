@@ -2851,6 +2851,147 @@ button {
   white-space: nowrap;
 }
 
+.ranking-drag-animation {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ranking-drag-animation.is-playing {
+  display: block;
+}
+
+.ranking-drag-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.ranking-drag-avatar,
+.ranking-drag-runner,
+.ranking-drag-rope,
+.ranking-drag-caption {
+  position: absolute;
+  left: 0;
+  top: 30%;
+  will-change: transform, opacity;
+}
+
+.ranking-drag-avatar {
+  width: 118px;
+  height: 118px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.24), transparent 58%),
+    linear-gradient(135deg, var(--participant-color), rgba(255,193,7,.8));
+  box-shadow:
+    0 0 0 5px rgba(255,255,255,.85),
+    0 0 0 10px color-mix(in srgb, var(--participant-color) 64%, transparent),
+    0 24px 45px rgba(0,0,0,.5);
+  animation: dragAvatarArc 3.55s cubic-bezier(.24,.82,.24,1) both;
+}
+
+.ranking-drag-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  font: 28px "Archivo Black", sans-serif;
+}
+
+.ranking-drag-avatar span:last-child {
+  position: absolute;
+  left: 50%;
+  bottom: -26px;
+  max-width: 150px;
+  padding: 5px 9px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255,193,7,.55);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(8,8,8,.82);
+  box-shadow: 0 10px 24px rgba(0,0,0,.36);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ranking-drag-runner {
+  width: 188px;
+  height: 176px;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 16px 18px rgba(0,0,0,.42))
+    saturate(1.15)
+    contrast(1.08);
+  animation: dragRunnerArc 3.55s cubic-bezier(.24,.82,.24,1) both;
+}
+
+.ranking-drag-rope {
+  width: 104px;
+  height: 5px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(90deg, #fff1a4 0 9px, #b77a1e 9px 17px);
+  box-shadow: 0 2px 7px rgba(0,0,0,.4);
+  transform-origin: right center;
+  animation: dragRopeArc 3.55s cubic-bezier(.24,.82,.24,1) both;
+}
+
+.ranking-drag-caption {
+  top: auto;
+  bottom: 18%;
+  left: 50%;
+  width: min(82vw, 420px);
+  padding: 10px 14px;
+  border: 1px solid rgba(255,193,7,.45);
+  border-radius: 999px;
+  color: var(--gold);
+  background: rgba(8,8,8,.78);
+  box-shadow: 0 20px 44px rgba(0,0,0,.34);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+  transform: translateX(-50%);
+  animation: dragCaptionPop 3.55s ease both;
+}
+
+@keyframes dragAvatarArc {
+  0% { opacity: 0; transform: translate(-32vw, 106px) scale(.78) rotate(-10deg); }
+  9% { opacity: 1; }
+  43% { transform: translate(30vw, -58px) scale(1.22) rotate(9deg); }
+  74% { transform: translate(70vw, 18px) scale(1.1) rotate(-8deg); }
+  100% { opacity: 0; transform: translate(112vw, 112px) scale(.88) rotate(13deg); }
+}
+
+@keyframes dragRunnerArc {
+  0% { opacity: 0; transform: translate(-6vw, 74px) scale(.8) rotate(-5deg); }
+  8% { opacity: 1; }
+  43% { transform: translate(47vw, -88px) scale(1.08) rotate(6deg); }
+  74% { transform: translate(88vw, -6px) scale(1) rotate(-6deg); }
+  100% { opacity: 0; transform: translate(126vw, 84px) scale(.88) rotate(5deg); }
+}
+
+@keyframes dragRopeArc {
+  0% { opacity: 0; transform: translate(4vw, 147px) rotate(-10deg) scaleX(.8); }
+  10% { opacity: 1; }
+  43% { transform: translate(41vw, -6px) rotate(-14deg) scaleX(1.05); }
+  74% { transform: translate(80vw, 80px) rotate(-4deg) scaleX(.95); }
+  100% { opacity: 0; transform: translate(120vw, 160px) rotate(12deg) scaleX(.7); }
+}
+
+@keyframes dragCaptionPop {
+  0%, 12%, 82%, 100% { opacity: 0; transform: translate(-50%, 16px) scale(.96); }
+  22%, 72% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
 @media (max-width: 760px) {
   #ranking .page-heading {
     padding: 14px 14px 10px;
