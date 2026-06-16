@@ -108,6 +108,7 @@ let broadcastSchedule = [];
 let rankingDragTimer;
 let lastRankingDragAt = 0;
 let rankingDragAudio;
+let pendingRankingDragSound = false;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -1213,12 +1214,12 @@ function renderRanking() {
   playRankingDragAnimation(ranking);
 }
 
-function playRankingDragAnimation(ranking) {
+function playRankingDragAnimation(ranking, { force = false } = {}) {
   const container = $("#rankingDragAnimation");
   if (!container || !ranking.length || !$("#ranking").classList.contains("active-view")) return;
 
   const now = Date.now();
-  if (now - lastRankingDragAt < 7000) return;
+  if (!force && now - lastRankingDragAt < 7000) return;
   lastRankingDragAt = now;
 
   const lastPerson = ranking[ranking.length - 1];
@@ -1253,10 +1254,25 @@ function playRankingDragSound() {
     rankingDragAudio.volume = 0.55;
     rankingDragAudio.currentTime = 0;
     const playPromise = rankingDragAudio.play();
-    if (playPromise) playPromise.catch(() => {});
+    if (playPromise) {
+      playPromise
+        .then(() => {
+          pendingRankingDragSound = false;
+        })
+        .catch(() => {
+          pendingRankingDragSound = true;
+        });
+    }
   } catch {
+    pendingRankingDragSound = true;
     // Some browsers block autoplay until the user interacts; the animation should still run.
   }
+}
+
+function retryPendingRankingDragSound() {
+  if (!pendingRankingDragSound || !$("#ranking").classList.contains("active-view")) return;
+  pendingRankingDragSound = false;
+  playRankingDragAnimation(getRanking(), { force: true });
 }
 
 function renderStatistics() {
@@ -2085,6 +2101,10 @@ $$("[data-view]").forEach((button) => {
 
 $$("[data-go]").forEach((button) => {
   button.addEventListener("click", () => navigate(button.dataset.go));
+});
+
+["pointerdown", "click", "keydown", "touchstart"].forEach((eventName) => {
+  document.addEventListener(eventName, retryPendingRankingDragSound, { capture: true, passive: true });
 });
 
 $("#profileButton").addEventListener("click", () => {
