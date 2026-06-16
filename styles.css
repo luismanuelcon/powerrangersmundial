@@ -1246,8 +1246,17 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.today-watch-icons::-webkit-scrollbar {
+  display: none;
 }
 
 .channel-icon {
@@ -1261,12 +1270,39 @@ main {
   overflow: hidden;
   border: 1px solid rgba(255, 204, 0, .32);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
-  box-shadow: 0 1px 5px rgba(0,0,0,.45);
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.95), rgba(255,255,255,.22) 18%, transparent 38%),
+    linear-gradient(135deg, rgba(255, 204, 0, .24), rgba(255,255,255,.08));
+  box-shadow: 0 0 0 1px rgba(0,0,0,.45), 0 0 8px rgba(255,204,0,.28);
 }
 
 .channel-icon.caracol {
   min-width: 34px;
+}
+
+.channel-icon.directv {
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.95), rgba(255,255,255,.22) 18%, transparent 38%),
+    linear-gradient(135deg, rgba(0, 188, 255, .34), rgba(77, 255, 95, .18));
+}
+
+.channel-icon.win {
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.95), rgba(255,255,255,.22) 18%, transparent 38%),
+    linear-gradient(135deg, rgba(255, 118, 0, .44), rgba(255, 204, 0, .18));
+}
+
+.channel-icon.caracol,
+.channel-icon.rcn {
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.95), rgba(255,255,255,.22) 18%, transparent 38%),
+    linear-gradient(135deg, rgba(0, 92, 255, .34), rgba(255, 204, 0, .16));
+}
+
+.channel-icon.disney {
+  background:
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.95), rgba(255,255,255,.22) 18%, transparent 38%),
+    linear-gradient(135deg, rgba(80, 170, 255, .36), rgba(35, 67, 180, .2));
 }
 
 .channel-icon img {
@@ -2749,25 +2785,26 @@ button {
   }
 
   #ranking .today-watch-icons {
-    max-width: 96px;
+    width: min(118px, 34vw);
+    max-width: 118px;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
   }
 
   #ranking .channel-icon {
-    min-width: 30px;
+    min-width: 27px;
     height: 16px;
-    padding: 2px 3px;
+    padding: 2px 2px;
     border-radius: 999px;
   }
 
   #ranking .channel-icon img {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
 
   #ranking .channel-icon-text {
-    font-size: 6px;
+    font-size: 5.5px;
   }
 
   #ranking .ranking-layout {
