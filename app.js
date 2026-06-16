@@ -734,9 +734,11 @@ function renderHome() {
   const upcoming = [...state.matches]
     .filter((match) => match.status !== "FINISHED")
     .sort(upcomingFirstSort);
-  const cards = upcoming.slice(0, 3);
+  const todayKey = bogotaDateKey();
+  const todayCards = upcoming.filter((match) => bogotaDateKey(match.kickoff) === todayKey);
+  const cards = todayCards.length ? todayCards : upcoming.slice(0, 3);
   $("#homeMatches").innerHTML = cards.length
-    ? cards.map(matchCard).join("")
+    ? cards.map((match) => listMatchCard(match, "home-match-card")).join("")
     : `<div class="empty-state">No hay partidos próximos.</div>`;
 
   const user = currentUser();
@@ -793,7 +795,7 @@ function renderStageFilters() {
   });
 }
 
-function listMatchCard(match) {
+function listMatchCard(match, extraClass = "") {
   const user = currentUser();
   const prediction = user ? predictionFor(user.id, match.id) : null;
   const locked = isLocked(match);
@@ -806,7 +808,7 @@ function listMatchCard(match) {
   }
 
   return `
-    <article class="list-match-card">
+    <article class="list-match-card ${extraClass}">
       <div class="list-match-meta">
         <strong>${formatKickoff(match.kickoff)}</strong>
         <span>${escapeHtml(match.stage)}</span>
