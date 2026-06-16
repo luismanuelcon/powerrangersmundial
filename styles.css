@@ -1267,41 +1267,26 @@ main {
 }
 
 .channel-icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   display: inline-grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.45);
+  border: 1px solid rgba(255,255,255,.28);
   border-radius: 4px;
-  color: #fff;
-  font: 900 7px/1 "DM Sans", sans-serif;
-  box-shadow: 0 1px 4px rgba(0,0,0,.35);
-}
-
-.channel-icon.directv {
-  background: linear-gradient(145deg, #35a9e8, #07549c);
+  background: rgba(255,255,255,.08);
+  box-shadow: 0 1px 5px rgba(0,0,0,.4);
 }
 
 .channel-icon.caracol {
   border-radius: 50%;
-  color: #101010;
-  background: radial-gradient(circle, #fff 0 26%, #ffd500 28% 55%, #f36f21 57%);
 }
 
-.channel-icon.rcn {
-  color: #fff;
-  background: linear-gradient(145deg, #1c84d1, #173c8f);
-}
-
-.channel-icon.win {
-  color: #111;
-  background: linear-gradient(145deg, #ffe100, #ff8a00);
-}
-
-.channel-icon.disney {
-  color: #fff;
-  background: linear-gradient(145deg, #132f83, #07184d);
+.channel-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 /* Last Place Card */
@@ -2782,10 +2767,13 @@ button {
   }
 
   #ranking .channel-icon {
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
     border-radius: 3px;
-    font-size: 6px;
+  }
+
+  #ranking .channel-icon.caracol {
+    border-radius: 50%;
   }
 
   #ranking .ranking-layout {

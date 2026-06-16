@@ -416,15 +416,19 @@ function channelsForMatch(match) {
 
 function channelIconMarkup(channel) {
   const channelIcons = {
-    DIRECTV: { className: "directv", label: "D" },
-    "Caracol TV": { className: "caracol", label: "C" },
-    "RCN TV": { className: "rcn", label: "R" },
-    "Win Sports": { className: "win", label: "W" },
-    "Disney+": { className: "disney", label: "D+" },
+    DIRECTV: { className: "directv", file: "directv.png" },
+    "Caracol TV": { className: "caracol", file: "caracol.png" },
+    "RCN TV": { className: "rcn", file: "rcn.png" },
+    "Win Sports": { className: "win", file: "win.png" },
+    "Disney+": { className: "disney", file: "disney.png" },
   };
   const icon = channelIcons[channel];
   if (!icon) return "";
-  return `<span class="channel-icon ${icon.className}" title="${escapeHtml(channel)}" aria-label="${escapeHtml(channel)}">${icon.label}</span>`;
+  return `
+    <span class="channel-icon ${icon.className}" title="${escapeHtml(channel)}" aria-label="${escapeHtml(channel)}">
+      <img src="assets/channels/${icon.file}" alt="" loading="lazy" decoding="async">
+    </span>
+  `;
 }
 
 function watchChannelsMarkup(match) {
