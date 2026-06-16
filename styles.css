@@ -1947,16 +1947,16 @@ dialog > p {
     margin-left: 14px;
   }
   .hero-card {
-    min-height: 210px;
+    min-height: 165px;
     transform: none;
     margin: -8px 0 0;
   }
   .energy-circle {
-    width: min(72vw, 245px);
+    width: min(64vw, 205px);
   }
   .energy-circle img {
-    width: 82%;
-    height: 82%;
+    width: 78%;
+    height: 78%;
   }
   .ring-two {
     inset: 17%;
@@ -2386,19 +2386,19 @@ dialog {
   .hero-stats {
     width: 100%;
     justify-content: center;
-    gap: 14px;
-    margin-top: 18px;
+    gap: 12px;
+    margin-top: 14px;
   }
 
   .hero-card {
-    min-height: 210px;
+    min-height: 165px;
     width: 100%;
     margin: -6px 0 0;
     transform: none;
   }
 
   .energy-circle {
-    width: min(72vw, 245px);
+    width: min(64vw, 205px);
   }
 
   .mobile-nav {
@@ -2429,7 +2429,11 @@ dialog {
   }
 
   .hero-card {
-    min-height: 190px;
+    min-height: 150px;
+  }
+
+  .energy-circle {
+    width: min(58vw, 185px);
   }
 }
 
