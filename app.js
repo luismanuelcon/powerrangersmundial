@@ -16,6 +16,9 @@ function defaultState() {
       url: "https://api.football-data.org/v4/competitions/WC/matches",
       tokenConfigured: false,
     },
+    settings: {
+      rankingDragEnabled: true,
+    },
   };
 }
 
@@ -89,6 +92,10 @@ function loadState() {
         url: saved.api?.url || defaultState().api.url,
         tokenConfigured: Boolean(saved.api?.tokenConfigured),
       },
+      settings: {
+        ...defaultState().settings,
+        ...(saved.settings || {}),
+      },
       currentUserId: validUser ? saved.currentUserId : null,
       matches: dedupedMatches,
     };
@@ -115,6 +122,7 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     ...state,
+    settings: state.settings,
     api: {
       url: state.api.url,
       tokenConfigured: Boolean(state.api.tokenConfigured),
@@ -635,6 +643,10 @@ async function restoreSession() {
     state.participants = data.participants;
     state.currentUserId = data.user.id;
     state.api = data.api || defaultState().api;
+    state.settings = {
+      ...defaultState().settings,
+      ...(data.settings || {}),
+    };
     state.predictions = {};
     for (const prediction of data.predictions || []) {
       if (prediction.automatic) continue;
@@ -1213,6 +1225,7 @@ function renderRanking() {
 }
 
 function playRankingDragAnimation(ranking, { force = false } = {}) {
+  if (!state.settings?.rankingDragEnabled) return;
   const container = $("#rankingDragAnimation");
   if (!container || !ranking.length || !$("#ranking").classList.contains("active-view")) return;
 
@@ -1448,6 +1461,7 @@ function renderAdmin() {
   $("#apiToken").placeholder = state.api.tokenConfigured
     ? "Token guardado; escribe uno nuevo para reemplazarlo"
     : "X-Auth-Token";
+  $("#rankingDragEnabled").checked = state.settings?.rankingDragEnabled !== false;
   renderReminderPanel();
 
   $$("[data-save-result]").forEach((button) => {
@@ -1482,6 +1496,8 @@ function renderAdmin() {
       }
     });
   });
+
+  $("#rankingDragEnabled").onchange = saveAppSettings;
 }
 
 function reminderMatches() {
@@ -2162,6 +2178,25 @@ $("#apiForm").addEventListener("submit", async (event) => {
     showToast(error.message);
   }
 });
+
+async function saveAppSettings() {
+  const enabled = $("#rankingDragEnabled").checked;
+  try {
+    const settings = await apiRequest("/api/settings/app", {
+      method: "PUT",
+      body: JSON.stringify({ rankingDragEnabled: enabled }),
+    });
+    state.settings = {
+      ...defaultState().settings,
+      ...settings,
+    };
+    saveState();
+    showToast(enabled ? "Animación de ranking activada" : "Animación de ranking desactivada");
+  } catch (error) {
+    $("#rankingDragEnabled").checked = state.settings?.rankingDragEnabled !== false;
+    showToast(error.message);
+  }
+}
 
 $("#syncResults").addEventListener("click", syncApi);
 $("#shareRanking").addEventListener("click", shareWhatsApp);

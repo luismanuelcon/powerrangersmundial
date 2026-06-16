@@ -102,9 +102,35 @@ async function apiConfig() {
   };
 }
 
+async function appSettings() {
+  const { rows } = await pool.query(
+    "select key, value_cipher from prm_settings where key in ('ranking_drag_enabled')",
+  );
+  const settings = Object.fromEntries(rows.map((row) => [row.key, decrypt(row.value_cipher, secret)]));
+  return {
+    rankingDragEnabled: settings.ranking_drag_enabled !== "false",
+  };
+}
+
 async function saveApiConfig(url, token) {
   const values = [["api_url", url]];
   if (token) values.push(["api_token", token]);
+  for (const [key, value] of values) {
+    await pool.query(
+      `
+        insert into prm_settings (key, value_cipher, updated_at)
+        values ($1, $2, now())
+        on conflict (key) do update set
+          value_cipher = excluded.value_cipher,
+          updated_at = now()
+      `,
+      [key, encrypt(value, secret)],
+    );
+  }
+}
+
+async function saveAppSettings(settings) {
+  const values = [["ranking_drag_enabled", settings.rankingDragEnabled ? "true" : "false"]];
   for (const [key, value] of values) {
     await pool.query(
       `
@@ -194,6 +220,7 @@ async function handleApi(request, response, pathname) {
       "select match_id, home_score, away_score, status from prm_match_results",
     );
     const config = await apiConfig();
+    const settings = await appSettings();
     sendJson(response, 200, {
       user: publicUser(user),
       participants: rows.map(publicUser),
@@ -203,6 +230,7 @@ async function handleApi(request, response, pathname) {
         url: config.url,
         tokenConfigured: Boolean(config.token),
       },
+      settings,
     });
     return;
   }
@@ -286,6 +314,15 @@ async function handleApi(request, response, pathname) {
       url: config.url,
       tokenConfigured: Boolean(config.token),
     });
+    return;
+  }
+
+  if (request.method === "PUT" && pathname === "/api/settings/app") {
+    const body = await readJson(request);
+    await saveAppSettings({
+      rankingDragEnabled: Boolean(body.rankingDragEnabled),
+    });
+    sendJson(response, 200, await appSettings());
     return;
   }
 
