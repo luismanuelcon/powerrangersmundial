@@ -416,17 +416,18 @@ function channelsForMatch(match) {
 
 function channelIconMarkup(channel) {
   const channelIcons = {
-    DIRECTV: { className: "directv", file: "directv.png" },
-    "Caracol TV": { className: "caracol", file: "caracol.png" },
-    "RCN TV": { className: "rcn", file: "rcn.png" },
-    "Win Sports": { className: "win", file: "win.png" },
-    "Disney+": { className: "disney", file: "disney.png" },
+    DIRECTV: { className: "directv", file: "directv.png", label: "DTV" },
+    "Caracol TV": { className: "caracol", file: "caracol.png", label: "CAR" },
+    "RCN TV": { className: "rcn", file: "rcn.png", label: "RCN" },
+    "Win Sports": { className: "win", file: "win.png", label: "WIN" },
+    "Disney+": { className: "disney", file: "disney.png", label: "D+" },
   };
   const icon = channelIcons[channel];
   if (!icon) return "";
   return `
     <span class="channel-icon ${icon.className}" title="${escapeHtml(channel)}" aria-label="${escapeHtml(channel)}">
       <img src="assets/channels/${icon.file}" alt="" loading="lazy" decoding="async">
+      <span class="channel-icon-text">${icon.label}</span>
     </span>
   `;
 }
@@ -436,12 +437,6 @@ function watchChannelsMarkup(match) {
   if (!channels.length) return "";
   return `
     <div class="today-watch" aria-label="Dónde ver en Colombia">
-      <span class="today-watch-label" title="Dónde ver en Colombia" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"></path>
-          <circle cx="12" cy="12" r="2.6"></circle>
-        </svg>
-      </span>
       <span class="today-watch-icons">${channels.map(channelIconMarkup).join("")}</span>
     </div>
   `;

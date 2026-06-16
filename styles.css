@@ -1234,59 +1234,55 @@ main {
 }
 
 .today-watch {
-  min-height: 16px;
-  margin-top: 5px;
+  min-height: 20px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-}
-
-.today-watch-label {
-  width: 14px;
-  height: 14px;
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-}
-
-.today-watch-label svg {
-  width: 13px;
-  height: 13px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  gap: 0;
 }
 
 .today-watch-icons {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 3px;
 }
 
 .channel-icon {
-  width: 17px;
-  height: 17px;
-  display: inline-grid;
-  place-items: center;
+  min-width: 34px;
+  height: 18px;
+  padding: 2px 4px 2px 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.28);
-  border-radius: 4px;
-  background: rgba(255,255,255,.08);
-  box-shadow: 0 1px 5px rgba(0,0,0,.4);
+  border: 1px solid rgba(255, 204, 0, .32);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  box-shadow: 0 1px 5px rgba(0,0,0,.45);
 }
 
 .channel-icon.caracol {
-  border-radius: 50%;
+  min-width: 34px;
 }
 
 .channel-icon img {
-  width: 100%;
-  height: 100%;
+  width: 12px;
+  height: 12px;
   display: block;
-  object-fit: cover;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.channel-icon-text {
+  color: #fff;
+  font: 900 7px/1 "DM Sans", sans-serif;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 2px rgba(0,0,0,.85);
 }
 
 /* Last Place Card */
@@ -2747,33 +2743,31 @@ button {
   }
 
   #ranking .today-watch {
-    min-height: 13px;
-    margin-top: 2px;
-    gap: 4px;
-  }
-
-  #ranking .today-watch-label {
-    width: 12px;
-    height: 12px;
-  }
-
-  #ranking .today-watch-label svg {
-    width: 11px;
-    height: 11px;
+    min-height: 20px;
+    margin-top: 3px;
+    gap: 0;
   }
 
   #ranking .today-watch-icons {
+    max-width: 96px;
+    justify-content: center;
     gap: 2px;
   }
 
   #ranking .channel-icon {
-    width: 15px;
-    height: 15px;
-    border-radius: 3px;
+    min-width: 30px;
+    height: 16px;
+    padding: 2px 3px;
+    border-radius: 999px;
   }
 
-  #ranking .channel-icon.caracol {
-    border-radius: 50%;
+  #ranking .channel-icon img {
+    width: 10px;
+    height: 10px;
+  }
+
+  #ranking .channel-icon-text {
+    font-size: 6px;
   }
 
   #ranking .ranking-layout {
