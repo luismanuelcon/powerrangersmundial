@@ -108,7 +108,6 @@ let broadcastSchedule = [];
 let rankingDragTimer;
 let lastRankingDragAt = 0;
 let rankingDragAudio;
-let pendingRankingDragSound = false;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -1211,7 +1210,6 @@ function renderRanking() {
   } else {
     $("#lastPlace").innerHTML = "";
   }
-  playRankingDragAnimation(ranking);
 }
 
 function playRankingDragAnimation(ranking, { force = false } = {}) {
@@ -1254,25 +1252,10 @@ function playRankingDragSound() {
     rankingDragAudio.volume = 0.55;
     rankingDragAudio.currentTime = 0;
     const playPromise = rankingDragAudio.play();
-    if (playPromise) {
-      playPromise
-        .then(() => {
-          pendingRankingDragSound = false;
-        })
-        .catch(() => {
-          pendingRankingDragSound = true;
-        });
-    }
+    if (playPromise) playPromise.catch(() => {});
   } catch {
-    pendingRankingDragSound = true;
     // Some browsers block autoplay until the user interacts; the animation should still run.
   }
-}
-
-function retryPendingRankingDragSound() {
-  if (!pendingRankingDragSound || !$("#ranking").classList.contains("active-view")) return;
-  pendingRankingDragSound = false;
-  playRankingDragAnimation(getRanking(), { force: true });
 }
 
 function renderStatistics() {
@@ -2096,15 +2079,17 @@ function renderAll() {
 }
 
 $$("[data-view]").forEach((button) => {
-  button.addEventListener("click", () => navigate(button.dataset.view));
+  button.addEventListener("click", () => {
+    navigate(button.dataset.view);
+    if (button.dataset.view === "ranking") playRankingDragAnimation(getRanking(), { force: true });
+  });
 });
 
 $$("[data-go]").forEach((button) => {
-  button.addEventListener("click", () => navigate(button.dataset.go));
-});
-
-["pointerdown", "click", "keydown", "touchstart"].forEach((eventName) => {
-  document.addEventListener(eventName, retryPendingRankingDragSound, { capture: true, passive: true });
+  button.addEventListener("click", () => {
+    navigate(button.dataset.go);
+    if (button.dataset.go === "ranking") playRankingDragAnimation(getRanking(), { force: true });
+  });
 });
 
 $("#profileButton").addEventListener("click", () => {
