@@ -228,6 +228,8 @@ const countryCodes = {
   "congo dr": "cd",
   "corea del sur": "kr",
   "costa de marfil": "ci",
+  "costa marfil": "ci",
+  "cote divoire": "ci",
   croacia: "hr",
   croatia: "hr",
   curacao: "cw",
@@ -367,8 +369,9 @@ function normalizeCountryName(name) {
     "korea republic": "south korea",
     "republic of korea": "south korea",
     "usa": "united states",
-    "ivory coast": "cote divoire",
+    "ivory coast": "ivory coast",
     "cote divoire": "ivory coast",
+    "costa marfil": "costa de marfil",
   };
   return aliases[normalized] || normalized;
 }
