@@ -107,6 +107,7 @@ let adminUsers = [];
 let broadcastSchedule = [];
 let rankingDragTimer;
 let lastRankingDragAt = 0;
+let rankingDragAudio;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -1237,12 +1238,25 @@ function playRankingDragAnimation(ranking) {
   container.classList.remove("is-playing");
   void container.offsetWidth;
   container.classList.add("is-playing");
+  playRankingDragSound();
 
   clearTimeout(rankingDragTimer);
   rankingDragTimer = setTimeout(() => {
     container.classList.remove("is-playing");
     container.innerHTML = "";
   }, 3900);
+}
+
+function playRankingDragSound() {
+  try {
+    rankingDragAudio ||= new Audio("assets/audio/perra-bing-bong.mp3");
+    rankingDragAudio.volume = 0.55;
+    rankingDragAudio.currentTime = 0;
+    const playPromise = rankingDragAudio.play();
+    if (playPromise) playPromise.catch(() => {});
+  } catch {
+    // Some browsers block autoplay until the user interacts; the animation should still run.
+  }
 }
 
 function renderStatistics() {
