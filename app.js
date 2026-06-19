@@ -18,6 +18,10 @@ function defaultState() {
     },
     settings: {
       rankingDragEnabled: true,
+      rankingBadges: [
+        { positionType: "fromBottom", position: 2, emoji: "⚠️", label: "CUIDADO LOCO", tone: "warning" },
+        { positionType: "fromBottom", position: 1, emoji: "🐕", label: "LA PERRA DEL MUNDIAL", tone: "danger" },
+      ],
     },
   };
 }
@@ -966,8 +970,11 @@ function openPredictionsDialog(matchId) {
         } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
           pointsEarned = '<span class="points-badge correct">+1 Acierto</span>';
         } else {
-          pointsEarned = '<span class="points-badge wrong">0</span>';
+          pointsEarned = '<span class="points-badge wrong">0 pts</span>';
         }
+      }
+      if (match.status === "FINISHED" && !prediction) {
+        pointsEarned = '<span class="points-badge wrong">0 pts</span>';
       }
 
       return `
@@ -1126,8 +1133,11 @@ function renderRanking() {
           const statusText = match.status === "IN_PLAY" ? "En juego" :
                              match.status === "PAUSED" ? "Descanso" :
                              match.status === "FINISHED" ? "Final" : "";
+          const finishedAction = match.status === "FINISHED"
+            ? `role="button" tabindex="0" data-ranking-match-points="${match.id}" aria-label="Ver puntos de ${teamName(match.home)} vs ${teamName(match.away)}"`
+            : "";
           return `
-            <div class="today-match ${statusClass}">
+            <div class="today-match ${statusClass}" ${finishedAction}>
               <div class="today-teams">
                 <div class="today-team">
                   <span class="today-flag">${flagMarkup(match.home, "small")}</span>
@@ -1139,7 +1149,7 @@ function renderRanking() {
                   <span class="today-flag">${flagMarkup(match.away, "small")}</span>
                 </div>
               </div>
-              ${statusText ? `<span class="today-status">${statusText}</span>` : ""}
+              ${statusText ? `<span class="today-status">${statusText}${match.status === "FINISHED" ? " - Ver puntos" : ""}</span>` : ""}
               ${watchChannelsMarkup(match)}
             </div>
           `;
@@ -1149,6 +1159,17 @@ function renderRanking() {
   } else {
     $("#todayMatches").innerHTML = "";
   }
+
+  $$("[data-ranking-match-points]").forEach((card) => {
+    const openPoints = () => openPredictionsDialog(card.dataset.rankingMatchPoints);
+    card.addEventListener("click", openPoints);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPoints();
+      }
+    });
+  });
   
   $("#podium").innerHTML = ranking
     .slice(0, 3)
@@ -1170,6 +1191,7 @@ function renderRanking() {
       (person, index) => {
         const isLast = index === ranking.length - 1;
         const isWarning = ranking.length > 1 && index === ranking.length - 2;
+        const customBadges = rankingBadgesForIndex(index, ranking.length);
         return `
         <tr class="${isLast ? "ranking-last-place" : isWarning ? "ranking-warning-place" : ""}" style="--participant-row-color:${participantColor(person)}">
           <td><strong>#${index + 1}</strong></td>
@@ -1178,8 +1200,7 @@ function renderRanking() {
               ${participantAvatar(person, "table-avatar")}
               <span class="ranking-name">${escapeHtml(displayName(person))}</span>
               ${person.id === state.currentUserId ? '<span class="you-badge">TÚ</span>' : ""}
-              ${isWarning ? '<span class="warning-place-badge">CUIDADO LOCO</span>' : ""}
-              ${isLast ? '<span class="last-place-badge">LA PERRA DEL MUNDIAL</span>' : ""}
+              ${rankingBadgeMarkup(customBadges)}
             </div>
           </td>
           <td>${person.exact}</td>
@@ -1269,6 +1290,35 @@ function playRankingDragSound() {
   } catch {
     // Some browsers block autoplay until the user interacts; the animation should still run.
   }
+}
+
+function rankingBadgesForIndex(index, total) {
+  return (state.settings?.rankingBadges || [])
+    .map((badge) => ({
+      positionType: badge.positionType === "fromBottom" ? "fromBottom" : "fromTop",
+      position: Math.max(1, Number(badge.position) || 1),
+      emoji: String(badge.emoji || "").trim(),
+      label: String(badge.label || "").trim(),
+      tone: ["warning", "danger", "gold", "blue", "green"].includes(badge.tone) ? badge.tone : "gold",
+    }))
+    .filter((badge) => badge.label)
+    .filter((badge) => {
+      const target = badge.positionType === "fromBottom"
+        ? total - badge.position + 1
+        : badge.position;
+      return target === index + 1;
+    });
+}
+
+function rankingBadgeMarkup(badges) {
+  return badges
+    .map((badge) => `
+      <span class="ranking-custom-badge ${badge.tone}">
+        ${badge.emoji ? `<span class="ranking-badge-emoji">${escapeHtml(badge.emoji)}</span>` : ""}
+        ${escapeHtml(badge.label)}
+      </span>
+    `)
+    .join("");
 }
 
 function renderStatistics() {
@@ -1462,6 +1512,7 @@ function renderAdmin() {
     ? "Token guardado; escribe uno nuevo para reemplazarlo"
     : "X-Auth-Token";
   $("#rankingDragEnabled").checked = state.settings?.rankingDragEnabled !== false;
+  renderRankingBadgeEditor();
   renderReminderPanel();
 
   $$("[data-save-result]").forEach((button) => {
@@ -1498,6 +1549,55 @@ function renderAdmin() {
   });
 
   $("#rankingDragEnabled").onchange = saveAppSettings;
+  $("#addRankingBadge").onclick = () => {
+    state.settings.rankingBadges = [
+      ...(state.settings.rankingBadges || []),
+      { positionType: "fromTop", position: 1, emoji: "🏷️", label: "NUEVA LEYENDA", tone: "gold" },
+    ];
+    renderRankingBadgeEditor();
+  };
+  $("#saveRankingBadges").onclick = saveAppSettings;
+}
+
+function renderRankingBadgeEditor() {
+  const badges = state.settings?.rankingBadges || defaultState().settings.rankingBadges;
+  $("#rankingBadgeEditor").innerHTML = badges
+    .map((badge, index) => `
+      <div class="ranking-badge-row" data-ranking-badge-row="${index}">
+        <select data-badge-field="positionType" aria-label="Tipo de puesto">
+          <option value="fromTop" ${badge.positionType !== "fromBottom" ? "selected" : ""}>Desde arriba</option>
+          <option value="fromBottom" ${badge.positionType === "fromBottom" ? "selected" : ""}>Desde abajo</option>
+        </select>
+        <input data-badge-field="position" type="number" min="1" max="99" value="${Number(badge.position) || 1}" aria-label="Puesto">
+        <input class="emoji-input" data-badge-field="emoji" maxlength="8" value="${escapeHtml(badge.emoji || "")}" aria-label="Emoji">
+        <input data-badge-field="label" maxlength="48" value="${escapeHtml(badge.label || "")}" placeholder="Leyenda" aria-label="Leyenda">
+        <select data-badge-field="tone" aria-label="Color">
+          ${["warning", "danger", "gold", "blue", "green"].map((tone) => `<option value="${tone}" ${badge.tone === tone ? "selected" : ""}>${tone}</option>`).join("")}
+        </select>
+        <button class="remove-ranking-badge" type="button" data-remove-ranking-badge="${index}" aria-label="Eliminar leyenda">×</button>
+      </div>
+    `)
+    .join("");
+
+  $$("[data-remove-ranking-badge]").forEach((button) => {
+    button.onclick = () => {
+      state.settings.rankingBadges = readRankingBadgeEditor()
+        .filter((_, index) => index !== Number(button.dataset.removeRankingBadge));
+      renderRankingBadgeEditor();
+    };
+  });
+}
+
+function readRankingBadgeEditor() {
+  return $$("[data-ranking-badge-row]")
+    .map((row) => ({
+      positionType: row.querySelector('[data-badge-field="positionType"]').value,
+      position: Number(row.querySelector('[data-badge-field="position"]').value) || 1,
+      emoji: row.querySelector('[data-badge-field="emoji"]').value.trim(),
+      label: row.querySelector('[data-badge-field="label"]').value.trim(),
+      tone: row.querySelector('[data-badge-field="tone"]').value,
+    }))
+    .filter((badge) => badge.label);
 }
 
 function reminderMatches() {
@@ -2181,10 +2281,11 @@ $("#apiForm").addEventListener("submit", async (event) => {
 
 async function saveAppSettings() {
   const enabled = $("#rankingDragEnabled").checked;
+  const rankingBadges = readRankingBadgeEditor();
   try {
     const settings = await apiRequest("/api/settings/app", {
       method: "PUT",
-      body: JSON.stringify({ rankingDragEnabled: enabled }),
+      body: JSON.stringify({ rankingDragEnabled: enabled, rankingBadges }),
     });
     state.settings = {
       ...defaultState().settings,

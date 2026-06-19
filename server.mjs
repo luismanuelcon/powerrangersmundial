@@ -104,11 +104,21 @@ async function apiConfig() {
 
 async function appSettings() {
   const { rows } = await pool.query(
-    "select key, value_cipher from prm_settings where key in ('ranking_drag_enabled')",
+    "select key, value_cipher from prm_settings where key in ('ranking_drag_enabled', 'ranking_badges')",
   );
   const settings = Object.fromEntries(rows.map((row) => [row.key, decrypt(row.value_cipher, secret)]));
+  let rankingBadges;
+  try {
+    rankingBadges = JSON.parse(settings.ranking_badges || "null");
+  } catch {
+    rankingBadges = null;
+  }
   return {
     rankingDragEnabled: settings.ranking_drag_enabled !== "false",
+    rankingBadges: Array.isArray(rankingBadges) ? rankingBadges : [
+      { positionType: "fromBottom", position: 2, emoji: "⚠️", label: "CUIDADO LOCO", tone: "warning" },
+      { positionType: "fromBottom", position: 1, emoji: "🐕", label: "LA PERRA DEL MUNDIAL", tone: "danger" },
+    ],
   };
 }
 
@@ -131,6 +141,9 @@ async function saveApiConfig(url, token) {
 
 async function saveAppSettings(settings) {
   const values = [["ranking_drag_enabled", settings.rankingDragEnabled ? "true" : "false"]];
+  if (Array.isArray(settings.rankingBadges)) {
+    values.push(["ranking_badges", JSON.stringify(settings.rankingBadges)]);
+  }
   for (const [key, value] of values) {
     await pool.query(
       `
@@ -319,8 +332,18 @@ async function handleApi(request, response, pathname) {
 
   if (request.method === "PUT" && pathname === "/api/settings/app") {
     const body = await readJson(request);
+    const rankingBadges = Array.isArray(body.rankingBadges)
+      ? body.rankingBadges.slice(0, 8).map((badge) => ({
+          positionType: badge.positionType === "fromBottom" ? "fromBottom" : "fromTop",
+          position: Math.max(1, Math.min(99, Number.parseInt(badge.position, 10) || 1)),
+          emoji: String(badge.emoji || "").trim().slice(0, 8),
+          label: String(badge.label || "").trim().slice(0, 48),
+          tone: ["warning", "danger", "gold", "blue", "green"].includes(badge.tone) ? badge.tone : "gold",
+        })).filter((badge) => badge.label)
+      : undefined;
     await saveAppSettings({
       rankingDragEnabled: Boolean(body.rankingDragEnabled),
+      rankingBadges,
     });
     sendJson(response, 200, await appSettings());
     return;
