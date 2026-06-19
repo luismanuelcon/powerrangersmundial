@@ -4574,3 +4574,713 @@ button {
     font-size: 8px;
   }
 }
+
+/* =====================================================
+   UI/UX PRO MAX PASS - MOBILE FIRST POLISH
+   Visual-only refinements: hierarchy, touch comfort, surfaces, states.
+===================================================== */
+:root {
+  --primary: #ffc107;
+  --primary-dark: #8a5c00;
+  --bg: rgba(255, 255, 255, 0.045);
+  --border: rgba(255, 255, 255, 0.14);
+  --surface: #121214;
+  --surface-2: #18181b;
+  --surface-soft: rgba(255, 255, 255, 0.055);
+  --surface-strong: rgba(255, 193, 7, 0.105);
+  --text-soft: #d7dae0;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --tap: 44px;
+  --ease-ui: cubic-bezier(.2, .8, .2, 1);
+  --shadow-card: 0 16px 42px rgba(0, 0, 0, .28);
+  --shadow-lift: 0 22px 56px rgba(0, 0, 0, .36);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% -10%, rgba(255, 193, 7, 0.14), transparent 26%),
+    radial-gradient(circle at 0% 28%, rgba(0, 87, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 100% 14%, rgba(255, 26, 26, 0.105), transparent 30%),
+    linear-gradient(180deg, #070708 0%, #0b0b0d 52%, #050506 100%);
+  color: var(--white);
+  text-rendering: geometricPrecision;
+}
+
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.primary-button,
+.light-button,
+.whatsapp-button,
+.small-button,
+.ranking-shortcut,
+.filter-button,
+.view-predictions-btn,
+.edit-user-button,
+.strip-action button {
+  min-height: var(--tap);
+  border-radius: 999px;
+  transition:
+    transform 160ms var(--ease-ui),
+    filter 160ms var(--ease-ui),
+    border-color 160ms var(--ease-ui),
+    background 160ms var(--ease-ui),
+    box-shadow 160ms var(--ease-ui);
+}
+
+.primary-button:active,
+.light-button:active,
+.whatsapp-button:active,
+.small-button:active,
+.ranking-shortcut:active,
+.filter-button:active,
+.view-predictions-btn:active,
+.edit-user-button:active,
+.strip-action button:active,
+.today-match:active,
+.match-card:active,
+.list-match-card:active,
+.group-prediction-card:active {
+  transform: scale(.985);
+}
+
+.site-header {
+  box-shadow: 0 14px 35px rgba(0, 0, 0, .22);
+}
+
+.brand-logo,
+.profile-photo,
+.participant-avatar,
+.table-avatar,
+.podium-avatar,
+.legend-avatar,
+.pred-avatar,
+.mini-flag,
+.team-flag,
+.last-place-avatar {
+  outline: 1px solid rgba(255, 255, 255, .08);
+  outline-offset: -1px;
+}
+
+.page-heading,
+.hero {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 193, 7, .12), transparent 24%),
+    radial-gradient(circle at 0% 42%, rgba(0, 87, 255, .12), transparent 30%),
+    radial-gradient(circle at 100% 8%, rgba(255, 26, 26, .12), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, 0));
+}
+
+.hero {
+  border-bottom: 1px solid rgba(255, 193, 7, .12);
+}
+
+.hero-copy > p,
+.page-heading > p,
+.ranking-heading p,
+.form-note,
+.group-prediction-private span,
+.last-place-details small,
+.dashboard-strip small {
+  color: var(--text-soft);
+}
+
+.dashboard-strip,
+.rules-banner,
+.today-matches-section,
+.ranking-table-wrap,
+.podium-card,
+.match-card,
+.list-match-card,
+.group-prediction-card,
+.group-table,
+.admin-card,
+.admin-stat,
+.last-place-card,
+.history-chart-scroll {
+  border-radius: var(--radius-lg);
+  border-color: rgba(255, 255, 255, .105);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .018) 55%),
+    var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.dashboard-strip,
+.rules-banner,
+.today-matches-section {
+  border-color: rgba(255, 193, 7, .25);
+}
+
+.match-card:hover,
+.list-match-card:hover,
+.group-prediction-card:hover,
+.podium-card:hover,
+.today-match[data-ranking-match-predictions]:hover {
+  box-shadow: var(--shadow-lift);
+}
+
+.filter-button {
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .045);
+}
+
+.filter-button.active {
+  color: #080808;
+  box-shadow: 0 8px 22px rgba(255, 193, 7, .18);
+}
+
+.search-field,
+.stack-form input,
+.admin-score input,
+.admin-score select,
+.reminder-match-field select,
+.score-input {
+  min-height: var(--tap);
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  border-color: rgba(255, 255, 255, .14);
+  background: rgba(5, 5, 6, .82);
+}
+
+.list-match-main,
+.group-prediction-teams,
+.reminder-preview,
+.last-place-day,
+.prediction-item {
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .015)),
+    rgba(0, 0, 0, .24);
+}
+
+.prediction-item {
+  border: 1px solid rgba(255, 255, 255, .075);
+}
+
+.pred-name,
+.pred-result {
+  color: var(--white);
+}
+
+.auto-badge,
+.points-badge.wrong {
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, .11);
+}
+
+.today-match {
+  border-radius: var(--radius-md);
+}
+
+.today-match.live {
+  background:
+    linear-gradient(90deg, rgba(255, 26, 26, .12), rgba(255, 193, 7, .045)),
+    rgba(0, 0, 0, .20);
+}
+
+.today-match.finished {
+  background:
+    linear-gradient(90deg, rgba(0, 176, 80, .13), rgba(255, 193, 7, .035)),
+    rgba(0, 0, 0, .20);
+}
+
+.ranking-table {
+  background: transparent;
+}
+
+.ranking-table th {
+  color: rgba(255, 255, 255, .65);
+  background: rgba(255, 255, 255, .035);
+}
+
+.ranking-table td {
+  color: var(--white);
+}
+
+.points-cell {
+  text-shadow: 0 0 18px rgba(255, 193, 7, .2);
+}
+
+.standings-table tr.qualifies {
+  background:
+    linear-gradient(90deg, rgba(0, 176, 80, .16), rgba(0, 176, 80, .035));
+}
+
+.statistics-legend,
+.today-watch-icons,
+.filter-tabs {
+  overscroll-behavior-x: contain;
+}
+
+dialog {
+  border-radius: var(--radius-lg);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, .62);
+  backdrop-filter: blur(9px);
+}
+
+.dialog-close {
+  width: var(--tap);
+  height: var(--tap);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.nav-svg-icon,
+.statistics-nav-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto 3px;
+  display: grid;
+  place-items: center;
+}
+
+.nav-svg-icon svg,
+.statistics-nav-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 760px) {
+  body {
+    min-height: 100dvh;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+
+  .site-header {
+    height: 62px;
+    padding: 0 12px 0 14px;
+    border-bottom-color: rgba(255, 193, 7, .14);
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-logo {
+    width: 39px;
+    height: 39px;
+  }
+
+  .brand strong {
+    font-size: 11px;
+  }
+
+  .brand small {
+    margin-top: 3px;
+    font-size: 8px;
+    letter-spacing: .18em;
+  }
+
+  .profile-button,
+  #profileInitial {
+    width: 42px;
+    height: 42px;
+  }
+
+  .hero {
+    padding: 18px 14px 16px;
+    min-height: 0;
+  }
+
+  .world-cup-chip {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .hero h1 {
+    font-size: clamp(34px, 10.2vw, 48px);
+    letter-spacing: -.06em;
+  }
+
+  .hero-copy > p {
+    max-width: 360px;
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  .hero-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hero-actions .primary-button,
+  .hero-actions .text-button {
+    width: 100%;
+    min-height: 46px;
+    padding-inline: 12px;
+  }
+
+  .hero-stats {
+    margin-top: 12px;
+    padding: 9px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, .035);
+  }
+
+  .hero-card {
+    min-height: 120px;
+    margin-top: -2px;
+  }
+
+  .energy-circle {
+    width: min(48vw, 156px);
+  }
+
+  .dashboard-strip {
+    margin: 0 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .dashboard-strip article {
+    min-height: 78px;
+    padding: 12px;
+  }
+
+  .dashboard-strip strong {
+    font-size: 22px;
+  }
+
+  .dashboard-strip .strip-action {
+    min-height: 58px;
+  }
+
+  .section-block {
+    padding: 34px 10px 40px;
+  }
+
+  .section-heading,
+  .card-heading {
+    margin-bottom: 14px;
+  }
+
+  .section-heading h2,
+  .rules-banner h2,
+  .admin-card h2 {
+    font-size: 24px;
+  }
+
+  .page-heading {
+    padding: 24px 14px 16px;
+  }
+
+  .page-heading h1 {
+    font-size: clamp(29px, 8.8vw, 40px);
+  }
+
+  .page-heading > p,
+  .ranking-heading p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .toolbar {
+    padding: 0 10px 12px;
+    gap: 10px;
+  }
+
+  .filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 4px 4px 0;
+    scrollbar-width: none;
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    height: 40px;
+    padding-inline: 14px;
+  }
+
+  #partidos .matches-list,
+  #pronosticos .group-predictions-list,
+  .standings-container,
+  .admin-grid,
+  .admin-stats {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  #partidos .date-matches,
+  #pronosticos .group-prediction-grid,
+  .standings-grid {
+    gap: 10px;
+  }
+
+  #partidos .list-match-card {
+    padding: 10px;
+    border-radius: var(--radius-md);
+  }
+
+  #partidos .list-match-main {
+    min-height: 58px;
+    grid-template-columns: minmax(0, 1fr) minmax(84px, auto) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #partidos .list-match-team strong,
+  #pronosticos .group-prediction-teams span,
+  .standings-team-name {
+    font-size: 11px;
+  }
+
+  #partidos .mini-flag {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+  }
+
+  #partidos .list-prediction {
+    grid-template-columns: 40px auto 40px;
+    gap: 5px;
+  }
+
+  #partidos .list-prediction .score-input {
+    width: 40px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  #partidos .list-match-card .view-predictions-btn {
+    min-height: 38px;
+    margin-top: 6px;
+    font-size: 9px;
+  }
+
+  #ranking .page-heading {
+    padding: 12px 10px 8px;
+  }
+
+  #ranking .page-heading h1 {
+    font-size: clamp(23px, 7vw, 29px);
+  }
+
+  #ranking .today-matches-section {
+    margin: 0 8px 10px;
+    padding: 9px;
+    border-radius: var(--radius-md);
+  }
+
+  #ranking .today-match {
+    min-height: 52px;
+    padding: 9px 8px;
+    border-radius: 13px;
+  }
+
+  #ranking .today-teams {
+    grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr);
+  }
+
+  #ranking .today-team {
+    font-size: 10.5px;
+  }
+
+  #ranking .today-score {
+    min-width: 58px;
+    font-size: 17px;
+  }
+
+  #ranking .today-status {
+    font-size: 7.5px;
+    letter-spacing: .08em;
+  }
+
+  #ranking .ranking-layout {
+    padding-inline: 8px;
+  }
+
+  #ranking .podium {
+    gap: 6px;
+  }
+
+  #ranking .podium-card,
+  #ranking .podium-card.first {
+    min-height: 68px;
+    border-radius: 14px;
+  }
+
+  #ranking .podium-copy strong {
+    font-size: 10px;
+  }
+
+  #ranking .ranking-table-wrap {
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  #ranking .ranking-table th,
+  #ranking .ranking-table td {
+    height: 38px;
+    padding: 4px 7px;
+  }
+
+  #ranking .ranking-person {
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  #ranking .table-avatar {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+
+  #ranking .points-cell {
+    font-size: 15px;
+  }
+
+  #pronosticos .group-prediction-card {
+    border-radius: var(--radius-md);
+  }
+
+  #pronosticos .group-prediction-row {
+    min-height: 40px;
+  }
+
+  #predictionsDialog,
+  #authDialog,
+  #userDialog {
+    width: 100%;
+    max-width: none;
+    max-height: min(86dvh, 720px);
+    margin: auto 0 0;
+    border-radius: 24px 24px 0 0;
+    border-bottom: 0;
+  }
+
+  #predictionsDialog .predictions-list {
+    max-height: 58dvh;
+  }
+
+  #predictionsDialog .prediction-item {
+    min-height: 46px;
+    padding: 8px 10px;
+  }
+
+  #predictionsDialog .pred-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  #predictionsDialog .pred-name,
+  #predictionsDialog .pred-result {
+    font-size: 12px;
+  }
+
+  .mobile-nav {
+    height: calc(74px + env(safe-area-inset-bottom));
+    padding: 7px 6px calc(7px + env(safe-area-inset-bottom));
+    gap: 4px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    border-top-color: rgba(255, 193, 7, .18);
+    background:
+      linear-gradient(180deg, rgba(22, 22, 24, .92), rgba(8, 8, 9, .98));
+    box-shadow: 0 -18px 38px rgba(0, 0, 0, .38);
+  }
+
+  .mobile-link {
+    flex: 0 0 62px;
+    min-width: 62px;
+    min-height: 58px;
+    padding: 7px 4px 6px;
+    border-radius: 16px;
+    color: rgba(255, 255, 255, .62);
+    font-size: 8px;
+    line-height: 1.05;
+    transition: color 160ms var(--ease-ui), background 160ms var(--ease-ui), transform 160ms var(--ease-ui);
+  }
+
+  .mobile-link.active {
+    color: #090909;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    box-shadow: 0 10px 20px rgba(255, 193, 7, .18);
+  }
+
+  .mobile-link:active {
+    transform: scale(.96);
+  }
+
+  .mobile-link span,
+  .statistics-nav-icon,
+  .nav-svg-icon {
+    margin-bottom: 4px;
+  }
+
+  .statistics-nav-icon svg circle {
+    stroke: currentColor;
+    stroke-width: .55;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-actions {
+    grid-template-columns: 1fr;
+  }
+
+  #ranking .today-teams {
+    grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
+  }
+
+  #ranking .ranking-custom-badge {
+    max-width: 82px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-link {
+    flex-basis: 58px;
+    min-width: 58px;
+    font-size: 7.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
