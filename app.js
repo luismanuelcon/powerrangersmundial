@@ -1348,18 +1348,49 @@ function renderStatistics() {
         a.firstPredictionAt - b.firstPredictionAt ||
         a.name.localeCompare(b.name)),
   }));
-  const width = Math.max(720, resultDates.length * 120);
-  const height = Math.max(360, state.participants.length * 54 + 100);
-  const left = 62;
-  const right = 50;
-  const top = 42;
-  const bottom = 62;
+  const firstDay = history[0];
+  const lastDay = history.at(-1);
+  const positionFor = (day, personId) => day.ranking.findIndex((item) => item.id === personId) + 1;
+  const trendFor = (person) => {
+    const start = positionFor(firstDay, person.id);
+    const end = positionFor(lastDay, person.id);
+    const delta = start - end;
+    return {
+      start,
+      end,
+      delta,
+      label: delta > 0 ? `Subió ${delta}` : delta < 0 ? `Bajó ${Math.abs(delta)}` : "Igual",
+      tone: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+    };
+  };
+  const leader = lastDay.ranking[0];
+  const biggestClimber = state.participants
+    .map((person) => ({ person, ...trendFor(person) }))
+    .sort((a, b) => b.delta - a.delta || a.end - b.end)[0];
+
+  const width = Math.max(880, resultDates.length * 118 + 130);
+  const height = Math.max(430, state.participants.length * 46 + 126);
+  const left = 54;
+  const right = 72;
+  const top = 58;
+  const bottom = 78;
   const x = (index) => resultDates.length === 1
     ? width / 2
     : left + index * ((width - left - right) / (resultDates.length - 1));
   const y = (position) => state.participants.length === 1
     ? height / 2
     : top + (position - 1) * ((height - top - bottom) / (state.participants.length - 1));
+
+  const dayBands = resultDates.map((date, index) => {
+    const bandWidth = resultDates.length === 1 ? width - left - right : (width - left - right) / Math.max(1, resultDates.length - 1);
+    const bandX = index === 0 ? left : x(index) - bandWidth / 2;
+    const label = formatDate(`${date}T12:00:00-05:00`, { day: "numeric", month: "short" });
+    return `
+      <rect x="${Math.max(left, bandX)}" y="${top - 28}" width="${Math.min(bandWidth, width - right - Math.max(left, bandX))}" height="${height - top - bottom + 54}" class="chart-day-band ${index % 2 ? "alt" : ""}"/>
+      <line x1="${x(index)}" y1="${top - 18}" x2="${x(index)}" y2="${height - bottom + 24}" class="chart-day-line"/>
+      <text x="${x(index)}" y="${top - 32}" text-anchor="middle" class="chart-date-top">${label}</text>
+      <text x="${x(index)}" y="${height - 26}" text-anchor="middle" class="chart-date">${label}</text>`;
+  }).join("");
 
   const paths = state.participants.map((person) => {
     const points = history.map((day, index) => {
@@ -1372,32 +1403,75 @@ function renderStatistics() {
     const marker = source
       ? `<image href="${source}" x="${last.x - 16}" y="${last.y - 16}" width="32" height="32" preserveAspectRatio="xMidYMid slice" class="chart-photo" />`
       : `<g><circle cx="${last.x}" cy="${last.y}" r="16" fill="${participantColor(person)}"/><text x="${last.x}" y="${last.y + 4}" text-anchor="middle" class="chart-initials">${initials(displayName(person))}</text></g>`;
-    return `<g>
-      <path d="${path}" fill="none" stroke="${participantColor(person)}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-      ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="${participantColor(person)}" stroke="#090909" stroke-width="2"><title>${escapeHtml(displayName(person))}: puesto ${point.position}</title></circle>`).join("")}
+    const trend = trendFor(person);
+    const lastLabelX = Math.min(width - 28, last.x + 22);
+    const lastLabelAnchor = lastLabelX > width - 80 ? "end" : "start";
+    return `<g class="chart-person-path" style="--participant-color:${participantColor(person)}">
+      <path d="${path}" fill="none" stroke="${participantColor(person)}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" class="chart-path-shadow"/>
+      <path d="${path}" fill="none" stroke="${participantColor(person)}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="chart-path"/>
+      ${points.map((point, index) => `<g>
+        <circle cx="${point.x}" cy="${point.y}" r="${index === points.length - 1 ? 6.5 : 4.4}" fill="${participantColor(person)}" stroke="#090909" stroke-width="2.2" class="chart-point"><title>${escapeHtml(displayName(person))}: puesto ${point.position}</title></circle>
+        ${index === points.length - 1 ? `<text x="${lastLabelX}" y="${point.y + 4}" text-anchor="${lastLabelAnchor}" class="chart-end-label">${escapeHtml(displayName(person))} · #${point.position}</text>` : ""}
+      </g>`).join("")}
       ${marker}
+      <title>${escapeHtml(displayName(person))}: termina #${trend.end}. ${trend.label} desde el primer día.</title>
     </g>`;
   }).join("");
 
+  const dayCards = history.map((day) => `
+    <article class="statistics-day-card">
+      <span>${formatDate(`${day.date}T12:00:00-05:00`, { day: "numeric", month: "short" })}</span>
+      <div>
+        ${day.ranking.slice(0, 3).map((person, index) => `
+          <strong style="--participant-color:${participantColor(person)}">
+            <small>#${index + 1}</small>
+            ${participantAvatar(person, "statistics-day-avatar")}
+            <em>${escapeHtml(displayName(person))}</em>
+          </strong>`).join("")}
+      </div>
+    </article>`).join("");
+
   container.innerHTML = `
+    <div class="statistics-summary">
+      <article>
+        <span>Días con resultados</span>
+        <strong>${resultDates.length}</strong>
+        <small>Jornadas comparadas</small>
+      </article>
+      <article>
+        <span>Líder actual</span>
+        <strong>${escapeHtml(displayName(leader))}</strong>
+        <small>#1 con ${leader.points} pts</small>
+      </article>
+      <article>
+        <span>Mayor subida</span>
+        <strong>${escapeHtml(displayName(biggestClimber.person))}</strong>
+        <small>${biggestClimber.label}</small>
+      </article>
+    </div>
     <div class="statistics-legend">
       ${state.participants.map((person) => `
-        <div class="legend-person" style="--participant-color:${participantColor(person)}">
+        <div class="legend-person trend-${trendFor(person).tone}" style="--participant-color:${participantColor(person)}">
           ${participantAvatar(person, "legend-avatar")}
           <span>${escapeHtml(displayName(person))}</span>
+          <small>#${trendFor(person).end} · ${trendFor(person).label}</small>
         </div>`).join("")}
+    </div>
+    <div class="statistics-day-rail" aria-label="Resumen día a día del top 3">
+      ${dayCards}
     </div>
     <div class="history-chart-scroll">
       <svg class="history-chart" style="width:${width}px" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Evolución diaria de posiciones">
+        <rect x="0" y="0" width="${width}" height="${height}" class="chart-bg"/>
+        ${dayBands}
         ${state.participants.map((_, index) => `
           <line x1="${left}" y1="${y(index + 1)}" x2="${width - right}" y2="${y(index + 1)}" class="chart-grid-line"/>
           <text x="22" y="${y(index + 1) + 5}" class="chart-rank">#${index + 1}</text>`).join("")}
-        ${resultDates.map((date, index) => `
-          <text x="${x(index)}" y="${height - 22}" text-anchor="middle" class="chart-date">${formatDate(`${date}T12:00:00-05:00`, { day: "numeric", month: "short" })}</text>`).join("")}
+        <text x="${left}" y="${height - 8}" class="chart-axis-hint">Desliza para ver la evolución completa por día</text>
         ${paths}
       </svg>
     </div>
-    <p class="statistics-note">Cada color representa la evolución diaria de un participante.</p>
+    <p class="statistics-note">Cada línea muestra cómo cambia el puesto de un participante. Arriba es mejor posición; abajo, peligro.</p>
   `;
 }
 

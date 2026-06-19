@@ -5436,3 +5436,314 @@ dialog::backdrop {
     min-width: 38px;
   }
 }
+
+/* =====================================================
+   STATISTICS PRO VIEW
+   Readable day-by-day ranking evolution with mobile horizontal scan.
+===================================================== */
+.statistics-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.statistics-summary article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(255, 193, 7, .18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 193, 7, .13), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.016)),
+    #121214;
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+}
+
+.statistics-summary span,
+.statistics-summary small {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statistics-summary strong {
+  display: block;
+  margin: 6px 0 4px;
+  overflow: hidden;
+  color: var(--gold);
+  font: 22px/1.05 "Archivo Black", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-summary small {
+  color: rgba(255,255,255,.68);
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.legend-person small {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #090909;
+  background: var(--participant-color);
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.legend-person.trend-down small {
+  color: #fff;
+  background: rgba(255, 26, 26, .78);
+}
+
+.legend-person.trend-same small {
+  color: var(--white);
+  background: rgba(255,255,255,.16);
+}
+
+.statistics-day-rail {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.statistics-day-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.statistics-day-card {
+  min-width: 168px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+    #121214;
+}
+
+.statistics-day-card > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.statistics-day-card div {
+  display: grid;
+  gap: 5px;
+}
+
+.statistics-day-card strong {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  color: var(--white);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.statistics-day-card small {
+  color: var(--participant-color);
+  font-weight: 900;
+}
+
+.statistics-day-card em {
+  min-width: 0;
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-day-avatar {
+  width: 23px;
+  height: 23px;
+  border-width: 2px !important;
+  font-size: 8px;
+}
+
+#estadisticas .history-chart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-color: rgba(255,193,7,.18);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 193, 7, .09), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+  scrollbar-color: rgba(255, 193, 7, .7) rgba(255,255,255,.08);
+}
+
+#estadisticas .history-chart-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+#estadisticas .history-chart-scroll::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.07);
+  border-radius: 999px;
+}
+
+#estadisticas .history-chart-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--blue), var(--gold), var(--red));
+  border-radius: 999px;
+}
+
+.chart-bg {
+  fill: rgba(9,9,10,.68);
+}
+
+.chart-day-band {
+  fill: rgba(255,255,255,.018);
+}
+
+.chart-day-band.alt {
+  fill: rgba(255,193,7,.035);
+}
+
+.chart-day-line {
+  stroke: rgba(255,193,7,.14);
+  stroke-dasharray: 3 8;
+}
+
+.chart-date-top {
+  fill: rgba(255,255,255,.82);
+  font: 900 11px "DM Sans", sans-serif;
+  letter-spacing: .02em;
+}
+
+.chart-axis-hint {
+  fill: rgba(255,255,255,.42);
+  font: 800 10px "DM Sans", sans-serif;
+}
+
+.chart-path-shadow {
+  opacity: .16;
+  stroke-width: 9;
+}
+
+.chart-path {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--participant-color) 38%, transparent));
+}
+
+.chart-point {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--participant-color) 40%, transparent));
+}
+
+.chart-end-label {
+  fill: rgba(255,255,255,.78);
+  font: 900 10px "DM Sans", sans-serif;
+}
+
+@media (max-width: 760px) {
+  #estadisticas.active-view {
+    height: auto;
+    min-height: calc(100dvh - 62px - 74px - env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  #estadisticas .page-heading {
+    padding: 14px 12px 9px;
+  }
+
+  #estadisticas .page-heading h1 {
+    font-size: 27px;
+  }
+
+  #estadisticas .page-heading p {
+    white-space: normal;
+  }
+
+  #estadisticas .statistics-layout {
+    padding: 8px 8px 88px;
+    display: block;
+  }
+
+  .statistics-summary {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin-bottom: 8px;
+  }
+
+  .statistics-summary article {
+    min-height: 50px;
+    padding: 9px 11px;
+  }
+
+  .statistics-summary strong {
+    margin: 3px 0 1px;
+    font-size: 17px;
+  }
+
+  #estadisticas .statistics-legend {
+    flex: 0 0 auto;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  #estadisticas .legend-person {
+    min-width: fit-content;
+    padding: 4px 7px 4px 4px;
+    gap: 5px;
+    font-size: 9px;
+  }
+
+  #estadisticas .legend-person small {
+    font-size: 7px;
+  }
+
+  #estadisticas .legend-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .statistics-day-rail {
+    gap: 7px;
+    margin-bottom: 8px;
+  }
+
+  .statistics-day-card {
+    min-width: 150px;
+    padding: 8px;
+    border-radius: 13px;
+  }
+
+  #estadisticas .history-chart-scroll {
+    height: min(52dvh, 440px);
+    min-height: 360px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 14px;
+  }
+
+  #estadisticas .history-chart {
+    width: max(860px, 230vw) !important;
+    height: 100%;
+    min-height: 360px;
+  }
+
+  #estadisticas .statistics-note {
+    margin-top: 7px;
+    padding-inline: 6px;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+}
