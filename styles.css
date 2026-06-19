@@ -5284,3 +5284,155 @@ dialog::backdrop {
     transition-duration: .01ms !important;
   }
 }
+
+/* Compact prediction/result sheet: show all participants with minimal scroll on phones. */
+#predictionsDialog {
+  width: min(430px, calc(100% - 18px));
+}
+
+#predictionsDialog .predictions-header {
+  padding: 18px 20px 12px;
+}
+
+#predictionsDialog .predictions-header .eyebrow {
+  margin-bottom: 6px;
+  font-size: 8px;
+  letter-spacing: .2em;
+}
+
+#predictionsDialog .predictions-header h2 {
+  margin: 0 34px 7px 0;
+  font-size: clamp(18px, 5.4vw, 22px);
+  line-height: 1.04;
+}
+
+#predictionsDialog .predictions-match-info {
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+#predictionsDialog .match-datetime {
+  margin-bottom: 6px;
+}
+
+#predictionsDialog .result-final,
+#predictionsDialog .result-pending {
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+#predictionsDialog .result-final strong {
+  font-size: 14px;
+}
+
+#predictionsDialog .predictions-list {
+  padding: 8px;
+  max-height: calc(100dvh - 150px);
+}
+
+#predictionsDialog .prediction-item {
+  min-height: 34px;
+  margin-bottom: 4px;
+  padding: 5px 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  border-radius: 9px;
+}
+
+#predictionsDialog .prediction-user {
+  min-width: 0;
+  gap: 7px;
+}
+
+#predictionsDialog .pred-avatar {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border-width: 2px !important;
+  font-size: 8px;
+}
+
+#predictionsDialog .pred-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#predictionsDialog .prediction-score {
+  gap: 6px;
+}
+
+#predictionsDialog .pred-result {
+  min-width: 42px;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: right;
+}
+
+#predictionsDialog .points-badge {
+  min-width: 52px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 7px;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#predictionsDialog .dialog-close {
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+
+@media (max-width: 760px) {
+  #predictionsDialog {
+    width: min(100%, 360px);
+    max-height: min(92dvh, 620px);
+    margin: auto;
+    border-radius: 18px;
+    border-bottom: 1px solid rgba(255, 193, 7, .35);
+  }
+
+  #predictionsDialog .predictions-header {
+    padding: 15px 16px 10px;
+  }
+
+  #predictionsDialog .predictions-header h2 {
+    font-size: clamp(17px, 5.2vw, 20px);
+  }
+
+  #predictionsDialog .predictions-list {
+    max-height: calc(92dvh - 126px);
+    padding: 7px;
+  }
+
+  #predictionsDialog .prediction-item {
+    min-height: 32px;
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  #predictionsDialog {
+    width: calc(100% - 12px);
+  }
+
+  #predictionsDialog .points-badge {
+    min-width: 48px;
+    padding-inline: 5px;
+    font-size: 6.5px;
+  }
+
+  #predictionsDialog .pred-result {
+    min-width: 38px;
+  }
+}
