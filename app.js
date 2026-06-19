@@ -1133,11 +1133,14 @@ function renderRanking() {
           const statusText = match.status === "IN_PLAY" ? "En juego" :
                              match.status === "PAUSED" ? "Descanso" :
                              match.status === "FINISHED" ? "Final" : "";
-          const finishedAction = match.status === "FINISHED"
-            ? `role="button" tabindex="0" data-ranking-match-points="${match.id}" aria-label="Ver puntos de ${teamName(match.home)} vs ${teamName(match.away)}"`
+          const canOpenPredictions = match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "PAUSED";
+          const predictionAction = canOpenPredictions
+            ? `role="button" tabindex="0" data-ranking-match-predictions="${match.id}" aria-label="Ver pronósticos de ${teamName(match.home)} vs ${teamName(match.away)}"`
             : "";
+          const statusActionText = match.status === "FINISHED" ? " - Ver puntos" :
+                                   canOpenPredictions ? " - Ver pronósticos" : "";
           return `
-            <div class="today-match ${statusClass}" ${finishedAction}>
+            <div class="today-match ${statusClass}" ${predictionAction}>
               <div class="today-teams">
                 <div class="today-team">
                   <span class="today-flag">${flagMarkup(match.home, "small")}</span>
@@ -1149,7 +1152,7 @@ function renderRanking() {
                   <span class="today-flag">${flagMarkup(match.away, "small")}</span>
                 </div>
               </div>
-              ${statusText ? `<span class="today-status">${statusText}${match.status === "FINISHED" ? " - Ver puntos" : ""}</span>` : ""}
+              ${statusText ? `<span class="today-status">${statusText}${statusActionText}</span>` : ""}
               ${watchChannelsMarkup(match)}
             </div>
           `;
@@ -1160,13 +1163,13 @@ function renderRanking() {
     $("#todayMatches").innerHTML = "";
   }
 
-  $$("[data-ranking-match-points]").forEach((card) => {
-    const openPoints = () => openPredictionsDialog(card.dataset.rankingMatchPoints);
-    card.addEventListener("click", openPoints);
+  $$("[data-ranking-match-predictions]").forEach((card) => {
+    const openPredictions = () => openPredictionsDialog(card.dataset.rankingMatchPredictions);
+    card.addEventListener("click", openPredictions);
     card.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        openPoints();
+        openPredictions();
       }
     });
   });

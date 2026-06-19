@@ -1261,19 +1261,19 @@ main {
   background: rgba(0, 176, 80, 0.08);
 }
 
-.today-match.finished[data-ranking-match-points] {
+.today-match[data-ranking-match-predictions] {
   cursor: pointer;
 }
 
-.today-match.finished[data-ranking-match-points]:hover,
-.today-match.finished[data-ranking-match-points]:focus-visible {
+.today-match[data-ranking-match-predictions]:hover,
+.today-match[data-ranking-match-predictions]:focus-visible {
   border-color: var(--gold);
   box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.32), 0 10px 24px rgba(0, 0, 0, 0.28);
   outline: none;
   transform: translateY(-1px);
 }
 
-.today-match.finished[data-ranking-match-points]:active {
+.today-match[data-ranking-match-predictions]:active {
   transform: translateY(0);
 }
 
