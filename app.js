@@ -4,6 +4,23 @@ const APP_TIME_ZONE = "America/Bogota";
 
 const initialMatches = window.WORLD_CUP_GROUP_FIXTURES;
 
+function knockoutSlots(count, startNumber, sourceStart = null) {
+  return Array.from({ length: count }, (_, index) => ({
+    code: `P${startNumber + index}`,
+    home: sourceStart ? `Ganador P${sourceStart + index * 2}` : `1º grupo ${String.fromCharCode(65 + index)}`,
+    away: sourceStart ? `Ganador P${sourceStart + index * 2 + 1}` : "Clasificado por definir",
+  }));
+}
+
+const KNOCKOUT_ROUNDS = [
+  { name: "Ronda de 32", dates: "28 de junio - 3 de julio", note: "Los cruces se actualizan al cerrar la fase de grupos.", matches: knockoutSlots(16, 73) },
+  { name: "Octavos de final", dates: "4 - 7 de julio", note: "Avanzan los ganadores de la ronda de 32.", matches: knockoutSlots(8, 89, 73) },
+  { name: "Cuartos de final", dates: "9 - 11 de julio", note: "Camino directo a semifinales.", matches: knockoutSlots(4, 97, 89) },
+  { name: "Semifinales", dates: "14 - 15 de julio", note: "Los dos ganadores juegan la final.", matches: knockoutSlots(2, 101, 97) },
+  { name: "Tercer puesto", dates: "18 de julio", note: "Partido por el tercer lugar.", matches: [{ code: "P103", home: "Perdedor semifinal 1", away: "Perdedor semifinal 2" }] },
+  { name: "Final", dates: "19 de julio", note: "Campeon del mundo 2026.", matches: [{ code: "P104", home: "Ganador semifinal 1", away: "Ganador semifinal 2" }] },
+];
+
 const demoParticipants = [];
 
 function defaultState() {
@@ -495,6 +512,33 @@ function relativeBogotaDateKey(days) {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
+function activeBogotaDateKeys() {
+  return [relativeBogotaDateKey(0), relativeBogotaDateKey(-1)];
+}
+
+function isTodayOrYesterdayMatch(match) {
+  return activeBogotaDateKeys().includes(bogotaDateKey(match.kickoff));
+}
+
+function dayAwareSort(a, b) {
+  const today = relativeBogotaDateKey(0);
+  const yesterday = relativeBogotaDateKey(-1);
+  const dateA = bogotaDateKey(a.kickoff);
+  const dateB = bogotaDateKey(b.kickoff);
+  const priority = (date) => {
+    if (date === today) return 0;
+    if (date === yesterday) return 1;
+    if (date > today) return 2;
+    return 3;
+  };
+  const sectionA = priority(dateA);
+  const sectionB = priority(dateB);
+  if (sectionA !== sectionB) return sectionA - sectionB;
+  return sectionA === 3
+    ? new Date(b.kickoff) - new Date(a.kickoff)
+    : new Date(a.kickoff) - new Date(b.kickoff);
+}
+
 function upcomingFirstSort(a, b) {
   const today = bogotaDateKey();
   const dateA = bogotaDateKey(a.kickoff);
@@ -695,6 +739,7 @@ function navigate(viewId) {
   if (viewId === "ranking") renderRanking();
   if (viewId === "estadisticas") renderStatistics();
   if (viewId === "grupos") renderStandings();
+  if (viewId === "llaves") renderKnockoutBracket();
   if (viewId === "admin") renderAdmin();
 }
 
@@ -753,9 +798,10 @@ function renderHome() {
   const upcoming = [...state.matches]
     .filter((match) => match.status !== "FINISHED")
     .sort(upcomingFirstSort);
-  const todayKey = bogotaDateKey();
-  const todayCards = upcoming.filter((match) => bogotaDateKey(match.kickoff) === todayKey);
-  const cards = todayCards.length ? todayCards : upcoming.slice(0, 3);
+  const activeDayCards = [...state.matches]
+    .filter(isTodayOrYesterdayMatch)
+    .sort(dayAwareSort);
+  const cards = activeDayCards.length ? activeDayCards : upcoming.slice(0, 3);
   $("#homeMatches").innerHTML = cards.length
     ? cards.map((match) => listMatchCard(match, "home-match-card")).join("")
     : `<div class="empty-state">No hay partidos próximos.</div>`;
@@ -869,7 +915,7 @@ function renderMatchesPage() {
   const filtered = state.matches
     .filter((match) => activeStage === "Todos" || match.stage === activeStage)
     .filter((match) => `${match.home} ${match.away} ${teamName(match.home)} ${teamName(match.away)}`.toLowerCase().includes(searchTerm))
-    .sort(upcomingFirstSort);
+    .sort(dayAwareSort);
 
   const groups = Object.groupBy
     ? Object.groupBy(filtered, (match) => bogotaDateKey(match.kickoff))
@@ -1062,7 +1108,7 @@ function renderGroupPredictions() {
   const dates = filterDates[groupPredictionsDateFilter];
   const matches = [...state.matches]
     .filter((match) => !dates || dates.includes(bogotaDateKey(match.kickoff)))
-    .sort(upcomingFirstSort);
+    .sort(dayAwareSort);
   const groups = matches.reduce((result, match) => {
     const date = bogotaDateKey(match.kickoff);
     (result[date] ||= []).push(match);
@@ -1110,17 +1156,16 @@ function renderRanking() {
   ];
   
   // Partidos del día
-  const today = bogotaDateKey();
   const todayMatches = state.matches
-    .filter((m) => bogotaDateKey(m.kickoff) === today)
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    .filter(isTodayOrYesterdayMatch)
+    .sort(dayAwareSort);
   
   if (todayMatches.length > 0) {
     const hasLiveMatches = todayMatches.some((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
     $("#todayMatches").innerHTML = `
       <div class="today-matches-header">
         <span class="today-icon">${hasLiveMatches ? "🔴" : "📅"}</span>
-        <span class="today-title">Partidos de hoy</span>
+        <span class="today-title">Partidos de hoy y ayer</span>
         ${hasLiveMatches ? '<span class="live-indicator">EN VIVO</span>' : ""}
       </div>
       <div class="today-matches-grid">
@@ -1132,8 +1177,9 @@ function renderRanking() {
             : formatKickoff(match.kickoff);
           const statusText = match.status === "IN_PLAY" ? "En juego" :
                              match.status === "PAUSED" ? "Descanso" :
-                             match.status === "FINISHED" ? "Final" : "";
-          const canOpenPredictions = match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "PAUSED";
+                             match.status === "FINISHED" ? "Final" :
+                             isLocked(match) ? "Bloqueado" : "";
+          const canOpenPredictions = isLocked(match);
           const predictionAction = canOpenPredictions
             ? `role="button" tabindex="0" data-ranking-match-predictions="${match.id}" aria-label="Ver pronósticos de ${teamName(match.home)} vs ${teamName(match.away)}"`
             : "";
@@ -1322,6 +1368,43 @@ function rankingBadgeMarkup(badges) {
       </span>
     `)
     .join("");
+}
+
+function renderKnockoutBracket() {
+  const container = $("#knockoutBracket");
+  if (!container) return;
+  container.innerHTML = `
+    <div class="knockout-summary">
+      <img src="assets/icons/world-cup-2026.png" alt="" />
+      <div>
+        <span class="eyebrow">COPA MUNDIAL 2026</span>
+        <strong>Fase de eliminacion directa</strong>
+        <small>Programacion base: ronda de 32, octavos, cuartos, semifinales, tercer puesto y final.</small>
+      </div>
+    </div>
+    <div class="knockout-scroll" aria-label="Llaves de eliminacion directa">
+      <div class="knockout-rounds">
+        ${KNOCKOUT_ROUNDS.map((round) => `
+          <section class="knockout-round">
+            <div class="knockout-round-head">
+              <strong>${escapeHtml(round.name)}</strong>
+              <span>${escapeHtml(round.dates)}</span>
+            </div>
+            <div class="knockout-matches">
+              ${round.matches.map((match) => `
+                <article class="knockout-match">
+                  <div class="knockout-code">${escapeHtml(match.code)}</div>
+                  <div class="knockout-team">${escapeHtml(match.home)}</div>
+                  <div class="knockout-team">${escapeHtml(match.away)}</div>
+                </article>
+              `).join("")}
+            </div>
+            <p>${escapeHtml(round.note)}</p>
+          </section>
+        `).join("")}
+      </div>
+    </div>
+  `;
 }
 
 function renderStatistics() {
@@ -1539,7 +1622,7 @@ function renderAdmin() {
     .join("");
 
   $("#adminMatches").innerHTML = [...state.matches]
-    .sort(upcomingFirstSort)
+    .sort(dayAwareSort)
     .map(
       (match) => `
         <div class="admin-match">
@@ -2268,6 +2351,7 @@ function renderAll() {
   renderGroupPredictions();
   renderRanking();
   renderStatistics();
+  renderKnockoutBracket();
   if (isAdmin()) renderAdmin();
 }
 
@@ -2398,7 +2482,7 @@ $("#shareReminder").addEventListener("click", sharePredictionReminder);
 
 window.addEventListener("hashchange", () => {
   const view = window.location.hash.slice(1);
-  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(view)) navigate(view);
+  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "llaves", "admin"].includes(view)) navigate(view);
 });
 
 async function initializeApp() {
@@ -2409,7 +2493,7 @@ async function initializeApp() {
   }
   renderAll();
   const initialView = window.location.hash.slice(1);
-  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "admin"].includes(initialView)) {
+  if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "llaves", "admin"].includes(initialView)) {
     navigate(initialView);
   } else {
     navigate("ranking");
@@ -2417,9 +2501,8 @@ async function initializeApp() {
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy
-  const today = bogotaDateKey();
-  const hasTodayMatches = state.matches.some((m) => bogotaDateKey(m.kickoff) === today);
-  if (hasTodayMatches && state.api.tokenConfigured) {
+  const hasActiveDayMatches = state.matches.some(isTodayOrYesterdayMatch);
+  if (hasActiveDayMatches && state.api.tokenConfigured) {
     setTimeout(() => silentSync(), 2000);
   }
 }
@@ -2435,9 +2518,8 @@ setInterval(() => {
 
 // Auto-sync con API si hay partidos hoy (cada 30 minutos para evitar datos incompletos)
 setInterval(async () => {
-  const today = bogotaDateKey();
-  const hasTodayMatches = state.matches.some((m) => bogotaDateKey(m.kickoff) === today);
-  if (hasTodayMatches && state.api.tokenConfigured) {
+  const hasActiveDayMatches = state.matches.some(isTodayOrYesterdayMatch);
+  if (hasActiveDayMatches && state.api.tokenConfigured) {
     console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
   }
