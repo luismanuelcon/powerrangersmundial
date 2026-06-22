@@ -520,6 +520,13 @@ function isTodayOrYesterdayMatch(match) {
   return activeBogotaDateKeys().includes(bogotaDateKey(match.kickoff));
 }
 
+function isLiveDashboardMatch(match) {
+  const today = relativeBogotaDateKey(0);
+  const yesterday = relativeBogotaDateKey(-1);
+  const matchDate = bogotaDateKey(match.kickoff);
+  return matchDate === today || (matchDate === yesterday && match.status !== "FINISHED");
+}
+
 function dayAwareSort(a, b) {
   const today = relativeBogotaDateKey(0);
   const yesterday = relativeBogotaDateKey(-1);
@@ -799,7 +806,7 @@ function renderHome() {
     .filter((match) => match.status !== "FINISHED")
     .sort(upcomingFirstSort);
   const activeDayCards = [...state.matches]
-    .filter(isTodayOrYesterdayMatch)
+    .filter(isLiveDashboardMatch)
     .sort(dayAwareSort);
   const cards = activeDayCards.length ? activeDayCards : upcoming.slice(0, 3);
   $("#homeMatches").innerHTML = cards.length
@@ -1157,7 +1164,7 @@ function renderRanking() {
   
   // Partidos del día
   const todayMatches = state.matches
-    .filter(isTodayOrYesterdayMatch)
+    .filter(isLiveDashboardMatch)
     .sort(dayAwareSort);
   
   if (todayMatches.length > 0) {
@@ -1370,38 +1377,180 @@ function rankingBadgeMarkup(badges) {
     .join("");
 }
 
-function renderKnockoutBracket() {
+function standingsGroupsFromData(data) {
+  return (data?.standings || [])
+    .filter((standing) => standing.type === "TOTAL")
+    .sort((a, b) => String(a.group || a.stage || "").localeCompare(String(b.group || b.stage || ""), "es", { numeric: true }));
+}
+
+function groupShortName(group, index) {
+  const raw = String(group.group || group.stage || `Grupo ${String.fromCharCode(65 + index)}`);
+  return raw.replace("GROUP_", "Grupo ");
+}
+
+function standingTeamSlot(team, groupLabel, seed) {
+  if (!team) return null;
+  return {
+    name: teamName(team.team.name),
+    rawName: team.team.name,
+    group: groupLabel,
+    seed,
+    points: team.points ?? 0,
+    gd: team.goalDifference ?? 0,
+    gf: team.goalsFor ?? 0,
+    position: team.position ?? seed,
+  };
+}
+
+function projectedQualifiersFromStandings(data) {
+  const groups = standingsGroupsFromData(data);
+  if (!groups.length) return null;
+  const winners = [];
+  const runners = [];
+  const thirds = [];
+
+  groups.forEach((group, index) => {
+    const label = groupShortName(group, index);
+    const table = [...(group.table || [])].sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
+    const winner = standingTeamSlot(table[0], label, "1º");
+    const runner = standingTeamSlot(table[1], label, "2º");
+    const third = standingTeamSlot(table[2], label, "3º");
+    if (winner) winners.push(winner);
+    if (runner) runners.push(runner);
+    if (third) thirds.push(third);
+  });
+
+  const bestThirds = thirds
+    .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name))
+    .slice(0, Math.max(0, 32 - winners.length - runners.length))
+    .map((team) => ({ ...team, seed: "3º*" }));
+
+  const qualifiers = [...winners, ...runners, ...bestThirds].slice(0, 32);
+  return {
+    groups,
+    winners,
+    runners,
+    bestThirds,
+    qualifiers,
+  };
+}
+
+function projectedRoundOf32Matches(projection) {
+  if (!projection?.qualifiers?.length) return KNOCKOUT_ROUNDS[0].matches;
+  const qualifiers = projection.qualifiers;
+  const left = qualifiers.slice(0, 16);
+  const right = qualifiers.slice(16, 32).reverse();
+  return Array.from({ length: 16 }, (_, index) => ({
+    code: `P${73 + index}`,
+    home: left[index] || null,
+    away: right[index] || null,
+  }));
+}
+
+function knockoutTeamMarkup(team, fallback) {
+  if (!team) {
+    return `
+      <div class="knockout-team pending">
+        <span class="knockout-team-main">${escapeHtml(fallback)}</span>
+        <small>Por definir</small>
+      </div>
+    `;
+  }
+  return `
+    <div class="knockout-team projected">
+      <span class="knockout-team-main">
+        <span class="mini-flag">${flagMarkup(team.rawName, "small")}</span>
+        ${escapeHtml(team.name)}
+      </span>
+      <small>${escapeHtml(team.seed)} ${escapeHtml(team.group)} · ${team.points} pts</small>
+    </div>
+  `;
+}
+
+function knockoutRoundMatches(round, projection) {
+  if (round.name === "Ronda de 32") return projectedRoundOf32Matches(projection);
+  return round.matches;
+}
+
+async function renderKnockoutBracket() {
   const container = $("#knockoutBracket");
   if (!container) return;
+  container.innerHTML = '<div class="standings-loading">Armando llaves con posiciones actuales...</div>';
+  const standings = await fetchStandings();
+  const projection = projectedQualifiersFromStandings(standings);
+  const qualifierCount = projection?.qualifiers.length || 0;
+  const bestThirdCount = projection?.bestThirds.length || 0;
+
   container.innerHTML = `
     <div class="knockout-summary">
       <img src="assets/icons/world-cup-2026.png" alt="" />
       <div>
         <span class="eyebrow">COPA MUNDIAL 2026</span>
-        <strong>Fase de eliminacion directa</strong>
-        <small>Programacion base: ronda de 32, octavos, cuartos, semifinales, tercer puesto y final.</small>
+        <strong>Llaves de eliminacion directa</strong>
+        <small>${projection ? `${qualifierCount} clasificados proyectados desde Posiciones, incluyendo ${bestThirdCount} mejores terceros.` : "Activa la API de posiciones para proyectar los cruces desde la tabla actual."}</small>
       </div>
     </div>
-    <div class="knockout-scroll" aria-label="Llaves de eliminacion directa">
-      <div class="knockout-rounds">
-        ${KNOCKOUT_ROUNDS.map((round) => `
-          <section class="knockout-round">
-            <div class="knockout-round-head">
-              <strong>${escapeHtml(round.name)}</strong>
-              <span>${escapeHtml(round.dates)}</span>
+    ${projection ? `
+      <div class="knockout-qualifier-strip" aria-label="Resumen de clasificados proyectados">
+        <div><strong>${projection.winners.length}</strong><span>Primeros</span></div>
+        <div><strong>${projection.runners.length}</strong><span>Segundos</span></div>
+        <div><strong>${projection.bestThirds.length}</strong><span>Mejores terceros</span></div>
+      </div>
+    ` : ""}
+    <div class="knockout-note">
+      <span>Proyeccion</span>
+      <p>Los cruces se llenan con la tabla actual. Cuando FIFA confirme emparejamientos oficiales, esta vista queda lista para conectar esos datos.</p>
+    </div>
+    <div class="knockout-mobile-road" aria-label="Ruta de eliminacion directa">
+      ${KNOCKOUT_ROUNDS.map((round, roundIndex) => {
+        const matches = knockoutRoundMatches(round, projection);
+        return `
+          <section class="knockout-stage-card">
+            <div class="knockout-stage-head">
+              <span class="knockout-stage-number">${roundIndex + 1}</span>
+              <div>
+                <strong>${escapeHtml(round.name)}</strong>
+                <small>${escapeHtml(round.dates)}</small>
+              </div>
             </div>
-            <div class="knockout-matches">
-              ${round.matches.map((match) => `
+            <div class="knockout-stage-matches">
+              ${matches.map((match, matchIndex) => `
                 <article class="knockout-match">
                   <div class="knockout-code">${escapeHtml(match.code)}</div>
-                  <div class="knockout-team">${escapeHtml(match.home)}</div>
-                  <div class="knockout-team">${escapeHtml(match.away)}</div>
+                  ${knockoutTeamMarkup(match.home && typeof match.home === "object" ? match.home : null, typeof match.home === "string" ? match.home : `Clasificado ${matchIndex * 2 + 1}`)}
+                  ${knockoutTeamMarkup(match.away && typeof match.away === "object" ? match.away : null, typeof match.away === "string" ? match.away : `Clasificado ${matchIndex * 2 + 2}`)}
                 </article>
               `).join("")}
             </div>
             <p>${escapeHtml(round.note)}</p>
           </section>
-        `).join("")}
+        `;
+      }).join("")}
+    </div>
+    <div class="knockout-desktop-board">
+      <div class="knockout-scroll" aria-label="Llaves de eliminacion directa en columnas">
+        <div class="knockout-rounds">
+          ${KNOCKOUT_ROUNDS.map((round, roundIndex) => {
+            const matches = knockoutRoundMatches(round, projection);
+            return `
+            <section class="knockout-round">
+              <div class="knockout-round-head">
+                <strong>${escapeHtml(round.name)}</strong>
+                <span>${escapeHtml(round.dates)}</span>
+              </div>
+              <div class="knockout-matches">
+                ${matches.map((match, matchIndex) => `
+                  <article class="knockout-match">
+                    <div class="knockout-code">${escapeHtml(match.code)}</div>
+                    ${knockoutTeamMarkup(match.home && typeof match.home === "object" ? match.home : null, typeof match.home === "string" ? match.home : `Clasificado ${matchIndex * 2 + 1}`)}
+                    ${knockoutTeamMarkup(match.away && typeof match.away === "object" ? match.away : null, typeof match.away === "string" ? match.away : `Clasificado ${matchIndex * 2 + 2}`)}
+                  </article>
+                `).join("")}
+              </div>
+              <p>${escapeHtml(round.note)}</p>
+            </section>`;
+          }).join("")}
+        </div>
       </div>
     </div>
   `;
@@ -2501,7 +2650,7 @@ async function initializeApp() {
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
   // Sync inicial si hay token y partidos hoy
-  const hasActiveDayMatches = state.matches.some(isTodayOrYesterdayMatch);
+  const hasActiveDayMatches = state.matches.some(isLiveDashboardMatch);
   if (hasActiveDayMatches && state.api.tokenConfigured) {
     setTimeout(() => silentSync(), 2000);
   }
@@ -2518,7 +2667,7 @@ setInterval(() => {
 
 // Auto-sync con API si hay partidos hoy (cada 30 minutos para evitar datos incompletos)
 setInterval(async () => {
-  const hasActiveDayMatches = state.matches.some(isTodayOrYesterdayMatch);
+  const hasActiveDayMatches = state.matches.some(isLiveDashboardMatch);
   if (hasActiveDayMatches && state.api.tokenConfigured) {
     console.log("Auto-sync: sincronizando partidos del día...");
     await silentSync();
