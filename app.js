@@ -1496,6 +1496,16 @@ async function renderKnockoutBracket() {
         <div><strong>${projection.runners.length}</strong><span>Segundos</span></div>
         <div><strong>${projection.bestThirds.length}</strong><span>Mejores terceros</span></div>
       </div>
+      <div class="knockout-qualifier-rail" aria-label="Clasificados proyectados">
+        ${projection.qualifiers.map((team, index) => `
+          <span class="knockout-qualifier-chip">
+            <span class="knockout-seed">${index + 1}</span>
+            <span class="mini-flag">${flagMarkup(team.rawName, "small")}</span>
+            <strong>${escapeHtml(team.name)}</strong>
+            <small>${escapeHtml(team.seed)} ${escapeHtml(team.group)}</small>
+          </span>
+        `).join("")}
+      </div>
     ` : ""}
     <div class="knockout-note">
       <span>Proyeccion</span>
@@ -1528,6 +1538,13 @@ async function renderKnockoutBracket() {
       }).join("")}
     </div>
     <div class="knockout-desktop-board">
+      <div class="knockout-poster-bg" aria-hidden="true">
+        <img src="assets/icons/world-cup-2026.png" alt="" />
+      </div>
+      <div class="knockout-board-title">
+        <span>Fase final</span>
+        <strong>Camino al campeon</strong>
+      </div>
       <div class="knockout-scroll" aria-label="Llaves de eliminacion directa en columnas">
         <div class="knockout-rounds">
           ${KNOCKOUT_ROUNDS.map((round, roundIndex) => {
