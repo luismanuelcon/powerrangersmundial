@@ -4515,8 +4515,9 @@ button {
   --bracket-source-height: 104px;
   --bracket-node-height: 78px;
   --bracket-source-gap: 10px;
-  --bracket-pair-gap: 176px;
-  --bracket-round-gap: 430px;
+  --bracket-pair-gap: 150px;
+  --bracket-round-gap: 378px;
+  --bracket-semi-gap: 834px;
 }
 
 .knockout-round {
@@ -4557,23 +4558,23 @@ button {
 }
 
 .knockout-round:nth-child(2) .knockout-matches {
-  padding-top: 96px;
+  padding-top: 70px;
   gap: var(--bracket-pair-gap);
 }
 
 .knockout-round:nth-child(3) .knockout-matches {
-  padding-top: 223px;
+  padding-top: 184px;
   gap: var(--bracket-round-gap);
 }
 
 .knockout-round:nth-child(4) .knockout-matches {
-  padding-top: 477px;
-  gap: 938px;
+  padding-top: 412px;
+  gap: var(--bracket-semi-gap);
 }
 
 .knockout-round:nth-child(5) .knockout-matches,
 .knockout-round:nth-child(6) .knockout-matches {
-  padding-top: 985px;
+  padding-top: 868px;
 }
 
 .knockout-match {
@@ -4626,7 +4627,7 @@ button {
 }
 
 .knockout-round:nth-child(4) .knockout-match:nth-child(odd)::before {
-  height: calc(100% + 938px);
+  height: calc(100% + var(--bracket-semi-gap));
 }
 
 .knockout-code {
@@ -4839,8 +4840,9 @@ button {
     --bracket-source-height: 92px;
     --bracket-node-height: 68px;
     --bracket-source-gap: 9px;
-    --bracket-pair-gap: 152px;
-    --bracket-round-gap: 365px;
+    --bracket-pair-gap: 134px;
+    --bracket-round-gap: 336px;
+    --bracket-semi-gap: 740px;
   }
 
   .knockout-round {
@@ -4905,23 +4907,23 @@ button {
   }
 
   .knockout-round:nth-child(2) .knockout-matches {
-    padding-top: 83px;
+    padding-top: 63px;
     gap: var(--bracket-pair-gap);
   }
 
   .knockout-round:nth-child(3) .knockout-matches {
-    padding-top: 193px;
+    padding-top: 164px;
     gap: var(--bracket-round-gap);
   }
 
   .knockout-round:nth-child(4) .knockout-matches {
-    padding-top: 411px;
-    gap: 798px;
+    padding-top: 366px;
+    gap: var(--bracket-semi-gap);
   }
 
   .knockout-round:nth-child(5) .knockout-matches,
   .knockout-round:nth-child(6) .knockout-matches {
-    padding-top: 844px;
+    padding-top: 770px;
   }
 
   .knockout-round:not(:last-child) .knockout-match::after {
@@ -4934,7 +4936,7 @@ button {
   }
 
   .knockout-round:nth-child(4) .knockout-match:nth-child(odd)::before {
-    height: calc(100% + 798px);
+    height: calc(100% + var(--bracket-semi-gap));
   }
 
   .knockout-team {
