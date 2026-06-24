@@ -4512,6 +4512,11 @@ button {
   gap: 18px;
   align-items: start;
   padding-right: min(26vw, 260px);
+  --bracket-source-height: 104px;
+  --bracket-node-height: 78px;
+  --bracket-source-gap: 10px;
+  --bracket-pair-gap: 176px;
+  --bracket-round-gap: 430px;
 }
 
 .knockout-round {
@@ -4552,28 +4557,29 @@ button {
 }
 
 .knockout-round:nth-child(2) .knockout-matches {
-  padding-top: 42px;
-  gap: 34px;
+  padding-top: 96px;
+  gap: var(--bracket-pair-gap);
 }
 
 .knockout-round:nth-child(3) .knockout-matches {
-  padding-top: 90px;
-  gap: 82px;
+  padding-top: 223px;
+  gap: var(--bracket-round-gap);
 }
 
 .knockout-round:nth-child(4) .knockout-matches {
-  padding-top: 185px;
-  gap: 174px;
+  padding-top: 477px;
+  gap: 938px;
 }
 
 .knockout-round:nth-child(5) .knockout-matches,
 .knockout-round:nth-child(6) .knockout-matches {
-  padding-top: 390px;
+  padding-top: 985px;
 }
 
 .knockout-match {
   position: relative;
-  min-height: 74px;
+  min-height: var(--bracket-node-height);
+  height: var(--bracket-node-height);
   padding: 10px 10px 10px 34px;
   border: 1px solid rgba(255,255,255,.16);
   border-radius: 12px;
@@ -4584,7 +4590,8 @@ button {
 }
 
 .knockout-round:first-child .knockout-match {
-  min-height: 58px;
+  min-height: var(--bracket-source-height);
+  height: var(--bracket-source-height);
 }
 
 .knockout-round:not(:last-child) .knockout-match::after {
@@ -4604,10 +4611,22 @@ button {
   right: -19px;
   top: 50%;
   width: 2px;
-  height: calc(100% + 10px);
+  height: calc(100% + var(--bracket-source-gap));
   background: linear-gradient(var(--gold), rgba(255,193,7,.18));
   transform: translateY(0);
   box-shadow: 0 0 10px rgba(255,193,7,.42);
+}
+
+.knockout-round:nth-child(2) .knockout-match:nth-child(odd)::before {
+  height: calc(100% + var(--bracket-pair-gap));
+}
+
+.knockout-round:nth-child(3) .knockout-match:nth-child(odd)::before {
+  height: calc(100% + var(--bracket-round-gap));
+}
+
+.knockout-round:nth-child(4) .knockout-match:nth-child(odd)::before {
+  height: calc(100% + 938px);
 }
 
 .knockout-code {
@@ -4817,6 +4836,11 @@ button {
     grid-template-columns: 1.55fr 1.2fr .96fr .82fr .68fr .68fr;
     gap: 15px;
     padding-right: 210px;
+    --bracket-source-height: 92px;
+    --bracket-node-height: 68px;
+    --bracket-source-gap: 9px;
+    --bracket-pair-gap: 152px;
+    --bracket-round-gap: 365px;
   }
 
   .knockout-round {
@@ -4871,31 +4895,33 @@ button {
   .knockout-match {
     padding: 7px 7px 7px 31px;
     border-radius: 10px;
-    min-height: 62px;
+    min-height: var(--bracket-node-height);
+    height: var(--bracket-node-height);
   }
 
   .knockout-round:first-child .knockout-match {
-    min-height: 52px;
+    min-height: var(--bracket-source-height);
+    height: var(--bracket-source-height);
   }
 
   .knockout-round:nth-child(2) .knockout-matches {
-    padding-top: 30px;
-    gap: 28px;
+    padding-top: 83px;
+    gap: var(--bracket-pair-gap);
   }
 
   .knockout-round:nth-child(3) .knockout-matches {
-    padding-top: 70px;
-    gap: 67px;
+    padding-top: 193px;
+    gap: var(--bracket-round-gap);
   }
 
   .knockout-round:nth-child(4) .knockout-matches {
-    padding-top: 148px;
-    gap: 146px;
+    padding-top: 411px;
+    gap: 798px;
   }
 
   .knockout-round:nth-child(5) .knockout-matches,
   .knockout-round:nth-child(6) .knockout-matches {
-    padding-top: 312px;
+    padding-top: 844px;
   }
 
   .knockout-round:not(:last-child) .knockout-match::after {
@@ -4905,6 +4931,10 @@ button {
 
   .knockout-round:not(:last-child) .knockout-match:nth-child(odd)::before {
     right: -16px;
+  }
+
+  .knockout-round:nth-child(4) .knockout-match:nth-child(odd)::before {
+    height: calc(100% + 798px);
   }
 
   .knockout-team {
