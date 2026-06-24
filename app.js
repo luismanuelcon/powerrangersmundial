@@ -698,6 +698,25 @@ function getRanking() {
     );
 }
 
+function matchLiveMinute(match) {
+  if (Number.isFinite(Number(match.liveMinute))) return Math.max(0, Math.floor(Number(match.liveMinute)));
+  if (match.status !== "IN_PLAY") return null;
+  const kickoff = new Date(match.kickoff);
+  if (Number.isNaN(kickoff.getTime())) return null;
+  const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60_000);
+  return elapsed >= 0 && elapsed <= 130 ? elapsed : null;
+}
+
+function matchStatusLabel(match) {
+  if (match.status === "IN_PLAY") {
+    const minute = matchLiveMinute(match);
+    return minute == null ? "En juego" : `En juego · ${minute}'`;
+  }
+  if (match.status === "PAUSED") return "Descanso";
+  if (match.status === "FINISHED") return "Final";
+  return isLocked(match) ? "Bloqueado" : "";
+}
+
 function showToast(message) {
   const toast = $("#toast");
   toast.textContent = message;
@@ -1211,10 +1230,7 @@ function renderRanking() {
           const scoreText = match.homeScore != null && match.awayScore != null 
             ? `${match.homeScore} - ${match.awayScore}` 
             : formatKickoff(match.kickoff);
-          const statusText = match.status === "IN_PLAY" ? "En juego" :
-                             match.status === "PAUSED" ? "Descanso" :
-                             match.status === "FINISHED" ? "Final" :
-                             isLocked(match) ? "Bloqueado" : "";
+          const statusText = matchStatusLabel(match);
           const canOpenPredictions = isLocked(match);
           const predictionAction = canOpenPredictions
             ? `role="button" tabindex="0" data-ranking-match-predictions="${match.id}" aria-label="Ver pronósticos de ${teamName(match.home)} vs ${teamName(match.away)}"`
@@ -2216,18 +2232,10 @@ function normalizeApiMatches(data) {
     const home = match.homeTeam?.name || match.strHomeTeam || match.home;
     const away = match.awayTeam?.name || match.strAwayTeam || match.away;
     const kickoff = match.utcDate || match.dateEvent && `${match.dateEvent}T${match.strTime || "00:00:00"}Z` || match.kickoff;
-    const statusMap = {
-      TIMED: "SCHEDULED",
-      SCHEDULED: "SCHEDULED",
-      IN_PLAY: "IN_PLAY",
-      PAUSED: "PAUSED",
-      FINISHED: "FINISHED",
-      Match_Finished: "FINISHED",
-      FT: "FINISHED",
-      "Not Started": "SCHEDULED",
-    };
     const homeScore = match.score?.fullTime?.home ?? match.intHomeScore ?? match.homeScore ?? null;
     const awayScore = match.score?.fullTime?.away ?? match.intAwayScore ?? match.awayScore ?? null;
+    const status = normalizeApiStatus(match, { kickoff, homeScore, awayScore });
+    const liveMinute = extractLiveMinute(match, { kickoff, status });
     return {
       id: String(match.id || match.idEvent || `api-${index}-${kickoff}`),
       stage: match.group || match.stage || match.strGroup || "Mundial 2026",
@@ -2235,11 +2243,89 @@ function normalizeApiMatches(data) {
       away,
       kickoff,
       venue: match.venue || match.strVenue || "Por confirmar",
-      status: statusMap[match.status] || statusMap[match.strStatus] || match.status || (homeScore != null ? "FINISHED" : "SCHEDULED"),
+      status,
       homeScore: homeScore == null ? null : Number(homeScore),
       awayScore: awayScore == null ? null : Number(awayScore),
+      liveMinute,
     };
   }).filter((match) => match.home && match.away && match.kickoff);
+}
+
+function normalizeApiStatus(match, { kickoff, homeScore, awayScore }) {
+  const rawStatus = String(
+    match.status?.short ||
+    match.status?.long ||
+    match.fixture?.status?.short ||
+    match.fixture?.status?.long ||
+    match.strStatus ||
+    match.status ||
+    "",
+  ).trim();
+  const key = rawStatus.toUpperCase().replace(/[\s-]+/g, "_");
+  const statusMap = {
+    TIMED: "SCHEDULED",
+    SCHEDULED: "SCHEDULED",
+    NOT_STARTED: "SCHEDULED",
+    NS: "SCHEDULED",
+    TBD: "SCHEDULED",
+    LIVE: "IN_PLAY",
+    INPLAY: "IN_PLAY",
+    IN_PLAY: "IN_PLAY",
+    PLAYING: "IN_PLAY",
+    FIRST_HALF: "IN_PLAY",
+    SECOND_HALF: "IN_PLAY",
+    "1H": "IN_PLAY",
+    "2H": "IN_PLAY",
+    H1: "IN_PLAY",
+    H2: "IN_PLAY",
+    ET: "IN_PLAY",
+    EXTRA_TIME: "IN_PLAY",
+    PENALTY_SHOOTOUT: "IN_PLAY",
+    PEN_LIVE: "IN_PLAY",
+    PAUSED: "PAUSED",
+    HALF_TIME: "PAUSED",
+    HALFTIME: "PAUSED",
+    HT: "PAUSED",
+    BREAK: "PAUSED",
+    BREAK_TIME: "PAUSED",
+    FINISHED: "FINISHED",
+    MATCH_FINISHED: "FINISHED",
+    FT: "FINISHED",
+    AET: "FINISHED",
+    PEN: "FINISHED",
+    AWARDED: "FINISHED",
+    SUSPENDED: "SCHEDULED",
+    POSTPONED: "SCHEDULED",
+    CANCELLED: "SCHEDULED",
+  };
+  if (statusMap[key]) return statusMap[key];
+
+  const hasScore = homeScore != null && awayScore != null;
+  const kickoffDate = new Date(kickoff);
+  if (hasScore && !Number.isNaN(kickoffDate.getTime())) {
+    const now = new Date();
+    const twoHoursAfterKickoff = new Date(kickoffDate.getTime() + 2 * 60 * 60_000);
+    if (now >= kickoffDate && now < twoHoursAfterKickoff) return "IN_PLAY";
+  }
+  return hasScore ? "FINISHED" : "SCHEDULED";
+}
+
+function extractLiveMinute(match, { kickoff, status }) {
+  const candidates = [
+    match.minute,
+    match.elapsed,
+    match.time?.elapsed,
+    match.status?.elapsed,
+    match.fixture?.status?.elapsed,
+    match.liveMinute,
+  ];
+  const value = candidates.map(Number).find((candidate) => Number.isFinite(candidate) && candidate >= 0);
+  if (value != null) return Math.floor(value);
+  if (status !== "IN_PLAY") return null;
+  const kickoffDate = new Date(kickoff);
+  if (Number.isNaN(kickoffDate.getTime())) return null;
+  const elapsed = Math.floor((Date.now() - kickoffDate.getTime()) / 60_000);
+  return elapsed >= 0 && elapsed <= 130 ? elapsed : null;
 }
 
 function updateMatchFromApi(existingMatch, apiMatch) {
@@ -2252,8 +2338,9 @@ function updateMatchFromApi(existingMatch, apiMatch) {
     existingMatch.awayScore !== apiMatch.awayScore
   );
   const kickoffChanged = Boolean(apiMatch.kickoff) && existingMatch.kickoff !== apiMatch.kickoff;
+  const liveMinuteChanged = existingMatch.liveMinute !== apiMatch.liveMinute;
 
-  if (!statusChanged && !scoresChanged && !kickoffChanged) return false;
+  if (!statusChanged && !scoresChanged && !kickoffChanged && !liveMinuteChanged) return false;
 
   existingMatch.status = apiMatch.status;
   if (hasValidScores) {
@@ -2261,7 +2348,24 @@ function updateMatchFromApi(existingMatch, apiMatch) {
     existingMatch.awayScore = apiMatch.awayScore;
   }
   if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
+  existingMatch.liveMinute = ["IN_PLAY", "PAUSED"].includes(apiMatch.status) ? apiMatch.liveMinute : null;
   return true;
+}
+
+async function persistSyncedResult(match) {
+  if (!isAdmin()) return;
+  try {
+    await apiRequest(`/api/results/${encodeURIComponent(match.id)}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
+        status: match.status,
+      }),
+    });
+  } catch (error) {
+    console.error("No fue posible persistir resultado sincronizado", match.id, error);
+  }
 }
 
 async function syncApi() {
@@ -2295,6 +2399,7 @@ async function syncApi() {
     // Hacer match por equipos (normalizado) en lugar de por ID
     let updatedCount = 0;
     let liveCount = 0;
+    const changedMatches = [];
     imported.forEach((apiMatch) => {
       const apiHome = normalizeCountryName(apiMatch.home);
       const apiAway = normalizeCountryName(apiMatch.away);
@@ -2313,10 +2418,14 @@ async function syncApi() {
           console.log("syncApi: partido FINISHED, ignorando API", apiMatch.home, "vs", apiMatch.away);
           return;
         }
-        if (updateMatchFromApi(existingMatch, apiMatch)) updatedCount++;
+        if (updateMatchFromApi(existingMatch, apiMatch)) {
+          updatedCount++;
+          changedMatches.push(existingMatch);
+        }
       }
     });
     
+    await Promise.all(changedMatches.map(persistSyncedResult));
     saveState();
     renderAll();
     navigate("admin");
@@ -2359,6 +2468,7 @@ async function silentSync() {
     }
 
     let changed = false;
+    const changedMatches = [];
     imported.forEach((apiMatch) => {
       const apiHome = normalizeCountryName(apiMatch.home);
       const apiAway = normalizeCountryName(apiMatch.away);
@@ -2379,6 +2489,7 @@ async function silentSync() {
             "status:", previousStatus, "->", apiMatch.status,
             "score:", apiMatch.homeScore, "-", apiMatch.awayScore);
           changed = true;
+          changedMatches.push(existingMatch);
         }
       } else {
         console.log("silentSync: partido no encontrado localmente", apiMatch.home, "vs", apiMatch.away);
@@ -2387,6 +2498,7 @@ async function silentSync() {
     
     console.log("silentSync: cambios detectados:", changed);
     if (changed) {
+      await Promise.all(changedMatches.map(persistSyncedResult));
       saveState();
       renderAll();
       if ($("#ranking").classList.contains("active-view")) renderRanking();
