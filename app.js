@@ -136,6 +136,7 @@ let broadcastSchedule = [];
 let rankingDragTimer;
 let lastRankingDragAt = 0;
 let rankingDragAudio;
+let autoSyncRunning = false;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -525,6 +526,34 @@ function isLiveDashboardMatch(match) {
   const yesterday = relativeBogotaDateKey(-1);
   const matchDate = bogotaDateKey(match.kickoff);
   return matchDate === today || (matchDate === yesterday && match.status !== "FINISHED");
+}
+
+function isMatchInLiveSyncWindow(match, now = new Date()) {
+  if (match.status === "FINISHED") return false;
+  const kickoff = new Date(match.kickoff);
+  if (Number.isNaN(kickoff.getTime())) return false;
+  const syncWindowEnds = new Date(kickoff.getTime() + 2 * 60 * 60_000);
+  return now >= kickoff && now < syncWindowEnds;
+}
+
+function liveSyncWindowMatches(now = new Date()) {
+  return state.matches.filter((match) => isMatchInLiveSyncWindow(match, now));
+}
+
+async function autoSyncLiveMatches(reason = "interval") {
+  if (!state.api.tokenConfigured) return;
+  const activeMatches = liveSyncWindowMatches();
+  if (!activeMatches.length || autoSyncRunning) return;
+  autoSyncRunning = true;
+  console.log(
+    `Auto-sync (${reason}): ${activeMatches.length} partido(s) en ventana de 2 horas`,
+    activeMatches.map((match) => `${match.home} vs ${match.away}`),
+  );
+  try {
+    await silentSync();
+  } finally {
+    autoSyncRunning = false;
+  }
 }
 
 function dayAwareSort(a, b) {
@@ -2666,10 +2695,9 @@ async function initializeApp() {
   }
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
-  // Sync inicial si hay token y partidos hoy
-  const hasActiveDayMatches = state.matches.some(isLiveDashboardMatch);
-  if (hasActiveDayMatches && state.api.tokenConfigured) {
-    setTimeout(() => silentSync(), 2000);
+  // Sync inicial si hay partidos en ventana viva: desde kickoff hasta 2 horas despues.
+  if (state.api.tokenConfigured && liveSyncWindowMatches().length) {
+    setTimeout(() => autoSyncLiveMatches("inicio"), 2000);
   }
 }
 
@@ -2682,11 +2710,8 @@ setInterval(() => {
   if ($("#ranking").classList.contains("active-view")) renderRanking();
 }, 60_000);
 
-// Auto-sync con API si hay partidos hoy (cada 30 minutos para evitar datos incompletos)
-setInterval(async () => {
-  const hasActiveDayMatches = state.matches.some(isLiveDashboardMatch);
-  if (hasActiveDayMatches && state.api.tokenConfigured) {
-    console.log("Auto-sync: sincronizando partidos del día...");
-    await silentSync();
-  }
-}, 1_800_000); // 30 minutos
+// Auto-sync con API cada 10 minutos durante la ventana viva de cada partido:
+// desde la hora de inicio hasta 2 horas despues.
+setInterval(() => {
+  autoSyncLiveMatches("cada 10 minutos");
+}, 600_000);
