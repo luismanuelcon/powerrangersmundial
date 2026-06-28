@@ -35,6 +35,8 @@ const KNOCKOUT_PHASE_BONUS = {
   Final: 5,
 };
 
+const KNOCKOUT_SCORING_ENABLED = false;
+
 const KNOCKOUT_STAGES = new Set([
   ...Object.keys(KNOCKOUT_PHASE_BONUS),
   "Tercer puesto",
@@ -615,7 +617,8 @@ function scorePrediction(prediction, match) {
   const empty = { applies: false, exact: 0, correct: 0, points: 0, details: [] };
   if (!prediction || prediction.automatic) return empty;
 
-  const validStatuses = isKnockoutMatch(match) ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
+  const usesKnockoutScoring = KNOCKOUT_SCORING_ENABLED && isKnockoutMatch(match);
+  const validStatuses = usesKnockoutScoring ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
   if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) return {
     ...empty,
     applies: true,
@@ -628,7 +631,7 @@ function scorePrediction(prediction, match) {
   let correct = 0;
   let points = 0;
 
-  if (!isKnockoutMatch(match)) {
+  if (!usesKnockoutScoring) {
     if (exactScore) {
       exact = 1;
       points = 2;

@@ -17,6 +17,8 @@ const KNOCKOUT_STAGES = new Set([
   "Tercer puesto",
 ]);
 
+const KNOCKOUT_SCORING_ENABLED = false;
+
 function outcome(home, away) {
   if (home === away) return "DRAW";
   return home > away ? "HOME" : "AWAY";
@@ -35,7 +37,8 @@ function matchWinnerSide(match) {
 function scorePrediction(prediction, match) {
   const empty = { applies: false, exact: 0, correct: 0, points: 0, details: [] };
   if (!prediction || prediction.automatic) return empty;
-  const validStatuses = isKnockoutMatch(match) ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
+  const usesKnockoutScoring = KNOCKOUT_SCORING_ENABLED && isKnockoutMatch(match);
+  const validStatuses = usesKnockoutScoring ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
   if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) {
     return { ...empty, applies: true };
   }
@@ -47,7 +50,7 @@ function scorePrediction(prediction, match) {
   let correct = 0;
   let points = 0;
 
-  if (!isKnockoutMatch(match)) {
+  if (!usesKnockoutScoring) {
     if (exactScore) return { applies: true, exact: 1, correct: 0, points: 2, details: ["+2 exacto"] };
     if (resultCorrect) return { applies: true, exact: 0, correct: 1, points: 1, details: ["+1 resultado"] };
     return { applies: true, exact: 0, correct: 0, points: 0, details };
@@ -94,14 +97,14 @@ const finalByPenalties = {
 
 const cases = [
   {
-    name: "empate exacto + clasificado + penales + bono final + perfecto",
+    name: "eliminatoria mantiene puntuacion historica por marcador exacto",
     actual: scorePrediction({ home: 1, away: 1, qualifier: "away", decision: "PENALTIES" }, finalByPenalties).points,
-    expected: 19,
+    expected: 2,
   },
   {
-    name: "resultado 90 correcto sin exacto + clasificado",
+    name: "eliminatoria mantiene puntuacion historica por resultado",
     actual: scorePrediction({ home: 2, away: 2, qualifier: "away", decision: "REGULAR" }, finalByPenalties).points,
-    expected: 12,
+    expected: 1,
   },
   {
     name: "sin pronostico no suma",
