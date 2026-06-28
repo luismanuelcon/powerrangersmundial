@@ -2,7 +2,7 @@ const ADMIN_ID = "admin";
 const STORAGE_KEY = "prm_state_v1";
 const APP_TIME_ZONE = "America/Bogota";
 
-const initialMatches = window.WORLD_CUP_GROUP_FIXTURES;
+const groupStageMatches = window.WORLD_CUP_GROUP_FIXTURES;
 
 function knockoutSlots(count, startNumber, sourceStart = null) {
   return Array.from({ length: count }, (_, index) => ({
@@ -39,6 +39,63 @@ const KNOCKOUT_STAGES = new Set([
   ...Object.keys(KNOCKOUT_PHASE_BONUS),
   "Tercer puesto",
 ]);
+
+const KNOCKOUT_SCHEDULE = {
+  P73: "2026-06-28T14:00:00-05:00",
+  P74: "2026-06-28T17:00:00-05:00",
+  P75: "2026-06-28T20:00:00-05:00",
+  P76: "2026-06-29T14:00:00-05:00",
+  P77: "2026-06-29T17:00:00-05:00",
+  P78: "2026-06-29T20:00:00-05:00",
+  P79: "2026-06-30T14:00:00-05:00",
+  P80: "2026-06-30T17:00:00-05:00",
+  P81: "2026-06-30T20:00:00-05:00",
+  P82: "2026-07-01T14:00:00-05:00",
+  P83: "2026-07-01T17:00:00-05:00",
+  P84: "2026-07-01T20:00:00-05:00",
+  P85: "2026-07-02T17:00:00-05:00",
+  P86: "2026-07-02T20:00:00-05:00",
+  P87: "2026-07-03T17:00:00-05:00",
+  P88: "2026-07-03T20:00:00-05:00",
+  P89: "2026-07-04T14:00:00-05:00",
+  P90: "2026-07-04T17:00:00-05:00",
+  P91: "2026-07-05T14:00:00-05:00",
+  P92: "2026-07-05T17:00:00-05:00",
+  P93: "2026-07-06T14:00:00-05:00",
+  P94: "2026-07-06T17:00:00-05:00",
+  P95: "2026-07-07T14:00:00-05:00",
+  P96: "2026-07-07T17:00:00-05:00",
+  P97: "2026-07-09T14:00:00-05:00",
+  P98: "2026-07-09T17:00:00-05:00",
+  P99: "2026-07-10T14:00:00-05:00",
+  P100: "2026-07-11T17:00:00-05:00",
+  P101: "2026-07-14T19:00:00-05:00",
+  P102: "2026-07-15T19:00:00-05:00",
+  P103: "2026-07-18T15:00:00-05:00",
+  P104: "2026-07-19T14:00:00-05:00",
+};
+
+function knockoutMatchFixtures() {
+  return KNOCKOUT_ROUNDS.flatMap((round) =>
+    round.matches.map((match) => ({
+      id: `wc26-${match.code.toLowerCase()}`,
+      code: match.code,
+      stage: round.name,
+      kickoff: KNOCKOUT_SCHEDULE[match.code],
+      home: match.home,
+      away: match.away,
+      venue: "Sede por definir",
+      status: "SCHEDULED",
+      homeScore: null,
+      awayScore: null,
+    })),
+  ).filter((match) => match.kickoff);
+}
+
+const initialMatches = [
+  ...groupStageMatches,
+  ...knockoutMatchFixtures(),
+];
 
 const demoParticipants = [];
 
