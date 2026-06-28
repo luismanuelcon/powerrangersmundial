@@ -21,6 +21,20 @@ const KNOCKOUT_ROUNDS = [
   { name: "Final", dates: "19 de julio", note: "Campeon del mundo 2026.", matches: [{ code: "P104", home: "Ganador semifinal 1", away: "Ganador semifinal 2" }] },
 ];
 
+const DECISION_METHODS = {
+  REGULAR: "90 minutos",
+  EXTRA_TIME: "Tiempo extra",
+  PENALTIES: "Penales",
+};
+
+const KNOCKOUT_PHASE_BONUS = {
+  "Ronda de 32": 1,
+  "Octavos de final": 1,
+  "Cuartos de final": 2,
+  Semifinales: 3,
+  Final: 5,
+};
+
 const demoParticipants = [];
 
 function defaultState() {
@@ -78,11 +92,14 @@ function loadState() {
 
       return sameFixture
         ? {
-            ...official,
-            status: previous.status,
-            homeScore: previous.homeScore,
-            awayScore: previous.awayScore,
-          }
+          ...official,
+          status: previous.status,
+          homeScore: previous.homeScore,
+          awayScore: previous.awayScore,
+          winner: previous.winner,
+          decision: previous.decision,
+          liveMinute: previous.liveMinute,
+        }
         : official;
     });
     // Solo agregar partidos guardados que no dupliquen equipos de partidos oficiales
@@ -600,9 +617,151 @@ function outcome(home, away) {
   return home > away ? "HOME" : "AWAY";
 }
 
+function isKnockoutMatch(match) {
+  return !/^Grupo\s/i.test(String(match.stage || ""));
+}
+
+function decisionLabel(value) {
+  return DECISION_METHODS[value] || "";
+}
+
+function qualifierLabel(match, value) {
+  if (value === "home") return teamName(match.home);
+  if (value === "away") return teamName(match.away);
+  return "";
+}
+
+function matchWinnerSide(match) {
+  if (match.winner === "home" || match.winner === "away") return match.winner;
+  if (match.homeScore == null || match.awayScore == null || match.homeScore === match.awayScore) return null;
+  return match.homeScore > match.awayScore ? "home" : "away";
+}
+
+function knockoutPhaseBonus(match) {
+  return KNOCKOUT_PHASE_BONUS[match.stage] || 0;
+}
+
+function scorePrediction(prediction, match) {
+  const empty = { applies: false, exact: 0, correct: 0, points: 0, details: [] };
+  if (!prediction || prediction.automatic) return empty;
+
+  const validStatuses = isKnockoutMatch(match) ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
+  if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) return {
+    ...empty,
+    applies: true,
+  };
+
+  const details = [];
+  const exactScore = prediction.home === match.homeScore && prediction.away === match.awayScore;
+  const resultCorrect = outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore);
+  let exact = 0;
+  let correct = 0;
+  let points = 0;
+
+  if (!isKnockoutMatch(match)) {
+    if (exactScore) {
+      exact = 1;
+      points = 2;
+      details.push("+2 exacto");
+    } else if (resultCorrect) {
+      correct = 1;
+      points = 1;
+      details.push("+1 resultado");
+    }
+    return { applies: true, exact, correct, points, details };
+  }
+
+  if (exactScore) {
+    exact = 1;
+    points += 5;
+    details.push("+5 marcador");
+  } else if (resultCorrect) {
+    correct = 1;
+    points += 3;
+    details.push("+3 resultado 90'");
+  }
+
+  const winner = matchWinnerSide(match);
+  const qualifierCorrect = Boolean(winner && prediction.qualifier === winner);
+  if (qualifierCorrect) {
+    const bonus = knockoutPhaseBonus(match);
+    points += 4 + bonus;
+    details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
+  }
+
+  const decisionCorrect = Boolean(match.decision && prediction.decision === match.decision);
+  if (decisionCorrect) {
+    points += 2;
+    details.push("+2 definicion");
+  }
+
+  if (exactScore && qualifierCorrect && decisionCorrect) {
+    points += 3;
+    details.push("+3 perfecto");
+  }
+
+  return { applies: true, exact, correct, points, details };
+}
+
 function predictionFor(userId, matchId) {
   const prediction = state.predictions[userId]?.[matchId] || null;
   return prediction?.automatic ? null : prediction;
+}
+
+function predictionScoreText(prediction, separator = "–") {
+  return prediction ? `${prediction.home} ${separator} ${prediction.away}` : `— ${separator} —`;
+}
+
+function predictionMetaText(match, prediction) {
+  if (!prediction || !isKnockoutMatch(match)) return "";
+  const parts = [];
+  if (prediction.qualifier) parts.push(`Clasifica ${qualifierLabel(match, prediction.qualifier)}`);
+  if (prediction.decision) parts.push(decisionLabel(prediction.decision));
+  return parts.join(" · ");
+}
+
+function knockoutPredictionControls(match, prediction, compact = false) {
+  if (!isKnockoutMatch(match)) return "";
+  const option = (value) => `<option value="${value}" ${prediction?.qualifier === value ? "selected" : ""}>${qualifierLabel(match, value)}</option>`;
+  return `
+    <div class="knockout-prediction ${compact ? "compact" : ""}">
+      <label>
+        <span>Clasifica</span>
+        <select data-match="${match.id}" data-knockout-field="qualifier" aria-label="Equipo clasificado">
+          <option value="">Elige</option>
+          ${option("home")}
+          ${option("away")}
+        </select>
+      </label>
+      <label>
+        <span>Definición</span>
+        <select data-match="${match.id}" data-knockout-field="decision" aria-label="Método de definición">
+          <option value="">Elige</option>
+          ${Object.entries(DECISION_METHODS).map(([value, label]) => `<option value="${value}" ${prediction?.decision === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>
+    </div>
+  `;
+}
+
+function matchResultSummary(match) {
+  if (match.status !== "FINISHED") return "";
+  const score = `${match.homeScore} – ${match.awayScore}`;
+  if (!isKnockoutMatch(match)) return score;
+  const winner = matchWinnerSide(match);
+  const extras = [
+    winner ? `Clasificó ${qualifierLabel(match, winner)}` : "",
+    decisionLabel(match.decision),
+  ].filter(Boolean);
+  return extras.length ? `${score} · ${extras.join(" · ")}` : score;
+}
+
+function predictionResultBadge(match, prediction) {
+  if (match.status !== "FINISHED") return prediction ? "BLOQUEADO" : "SIN PRONÓSTICO";
+  if (!prediction) return "SIN PUNTOS";
+  const scored = scorePrediction(prediction, match);
+  if (!scored.points) return "SIN PUNTOS";
+  return `${scored.details[0]?.toUpperCase() || "PUNTOS"} · +${scored.points}`;
 }
 
 function calculateStats(person) {
@@ -616,17 +775,10 @@ function calculateStats(person) {
     const prediction = predictions[match.id];
     if (!prediction || prediction.automatic) return;
     firstPredictionAt = Math.min(firstPredictionAt, new Date(prediction.savedAt).getTime());
-    // Contar puntos para partidos FINISHED, IN_PLAY o PAUSED (con scores válidos)
-    const validStatuses = ["FINISHED", "IN_PLAY", "PAUSED"];
-    if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) return;
-
-    if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
-      exact += 1;
-      points += 2;
-    } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
-      correct += 1;
-      points += 1;
-    }
+    const scored = scorePrediction(prediction, match);
+    exact += scored.exact;
+    correct += scored.correct;
+    points += scored.points;
   });
 
   return { ...person, exact, correct, points, firstPredictionAt };
@@ -644,16 +796,10 @@ function calculateStatsUntil(person, dateKey) {
     const prediction = predictions[match.id];
     if (!prediction || prediction.automatic) return;
     firstPredictionAt = Math.min(firstPredictionAt, new Date(prediction.savedAt).getTime());
-    if (!["FINISHED", "IN_PLAY", "PAUSED"].includes(match.status)) return;
-    if (match.homeScore == null || match.awayScore == null) return;
-
-    if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
-      exact += 1;
-      points += 2;
-    } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
-      correct += 1;
-      points += 1;
-    }
+    const scored = scorePrediction(prediction, match);
+    exact += scored.exact;
+    correct += scored.correct;
+    points += scored.points;
   });
 
   return { ...person, exact, correct, points, firstPredictionAt };
@@ -671,16 +817,10 @@ function calculateDayStats(person, dateStr = null) {
     if (matchDate !== targetDate) return;
     const prediction = predictions[match.id];
     if (!prediction || prediction.automatic) return;
-    if (match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "PAUSED") return;
-    if (match.homeScore == null || match.awayScore == null) return;
-
-    if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
-      exact += 1;
-      points += 2;
-    } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
-      correct += 1;
-      points += 1;
-    }
+    const scored = scorePrediction(prediction, match);
+    exact += scored.exact;
+    correct += scored.correct;
+    points += scored.points;
   });
 
   return { ...person, exact, correct, points };
@@ -757,6 +897,8 @@ async function restoreSession() {
       state.predictions[prediction.user_id][prediction.match_id] = {
         home: prediction.home_score,
         away: prediction.away_score,
+        qualifier: prediction.qualifier || "",
+        decision: prediction.decision || "",
         automatic: prediction.automatic,
         savedAt: prediction.saved_at,
       };
@@ -770,6 +912,8 @@ async function restoreSession() {
             homeScore: result.home_score,
             awayScore: result.away_score,
             status: result.status,
+            winner: result.winner,
+            decision: result.decision,
           }
         : match;
     });
@@ -804,12 +948,13 @@ function matchCard(match) {
   const locked = isLocked(match);
   const resultText =
     match.status === "FINISHED"
-      ? `${match.homeScore} – ${match.awayScore}`
+      ? matchResultSummary(match)
       : locked
         ? prediction
-          ? `${prediction.home} – ${prediction.away}`
+          ? predictionScoreText(prediction)
           : "Cerrado"
         : "Tu marcador";
+  const predictionMeta = predictionMetaText(match, prediction);
 
   return `
     <article class="match-card">
@@ -835,8 +980,10 @@ function matchCard(match) {
               <input class="score-input" data-match="${match.id}" data-side="home" type="number" min="0" max="20" value="${prediction?.home ?? ""}" placeholder="–" aria-label="Goles de ${teamName(match.home)}">
               <span>:</span>
               <input class="score-input" data-match="${match.id}" data-side="away" type="number" min="0" max="20" value="${prediction?.away ?? ""}" placeholder="–" aria-label="Goles de ${teamName(match.away)}">
-            </div>`
+            </div>
+            ${knockoutPredictionControls(match, prediction)}`
       }
+      ${locked && predictionMeta ? `<div class="knockout-summary">${predictionMeta}</div>` : ""}
       <div class="saved-mark">${
         prediction
           ? "✓ Pronóstico guardado"
@@ -919,13 +1066,8 @@ function listMatchCard(match, extraClass = "") {
   const user = currentUser();
   const prediction = user ? predictionFor(user.id, match.id) : null;
   const locked = isLocked(match);
-  let resultBadge = "";
-
-  if (prediction && match.status === "FINISHED") {
-    const exact = prediction.home === match.homeScore && prediction.away === match.awayScore;
-    const correct = outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore);
-    resultBadge = exact ? "EXACTO · +2" : correct ? "ACIERTO · +1" : "SIN PUNTOS";
-  }
+  const resultBadge = predictionResultBadge(match, prediction);
+  const predictionMeta = predictionMetaText(match, prediction);
 
   return `
     <article class="list-match-card ${extraClass}">
@@ -942,10 +1084,10 @@ function listMatchCard(match, extraClass = "") {
         <div class="list-match-score">
         ${
           locked
-            ? `<div class="locked-score">${prediction ? `${prediction.home} : ${prediction.away}` : "— : —"}</div>
+            ? `<div class="locked-score">${predictionScoreText(prediction, ":")}</div>
                ${
                  match.status === "FINISHED"
-                   ? `<span class="result-badge">${resultBadge || `FINAL ${match.homeScore}:${match.awayScore}`}</span>`
+                   ? `<span class="result-badge">${resultBadge}</span>`
                    : `<span class="result-badge">${prediction ? "BLOQUEADO" : "SIN PRONÓSTICO"}</span>`
                }`
             : `<div class="list-prediction">
@@ -960,6 +1102,8 @@ function listMatchCard(match, extraClass = "") {
           <span class="mini-flag">${flagMarkup(match.away, "small")}</span>
         </div>
       </div>
+      ${!locked ? knockoutPredictionControls(match, prediction, true) : ""}
+      ${locked && predictionMeta ? `<div class="knockout-summary compact">${predictionMeta}</div>` : ""}
       ${locked ? `<button class="view-predictions-btn" data-view-predictions="${match.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Ver predicciones</button>` : ""}
     </article>
   `;
@@ -994,7 +1138,7 @@ function renderMatchesPage() {
 }
 
 function bindScoreInputs() {
-  $$(".score-input[data-match]").forEach((input) => {
+  $$(".score-input[data-match], [data-knockout-field][data-match]").forEach((input) => {
     input.addEventListener("change", async () => {
       const match = state.matches.find((item) => item.id === input.dataset.match);
       if (!match || isLocked(match)) return;
@@ -1008,6 +1152,8 @@ function bindScoreInputs() {
       const container = input.closest(".match-card, .list-match-card");
       const homeInput = container.querySelector('[data-side="home"]');
       const awayInput = container.querySelector('[data-side="away"]');
+      const qualifierInput = container.querySelector('[data-knockout-field="qualifier"]');
+      const decisionInput = container.querySelector('[data-knockout-field="decision"]');
       if (homeInput.value === "" || awayInput.value === "") return;
 
       const home = Number(homeInput.value);
@@ -1016,16 +1162,24 @@ function bindScoreInputs() {
         showToast("Usa un marcador entre 0 y 20.");
         return;
       }
+      const qualifier = qualifierInput?.value || "";
+      const decision = decisionInput?.value || "";
+      if (isKnockoutMatch(match) && (!qualifier || !decision)) {
+        showToast("En eliminatoria elige clasificado y definición.");
+        return;
+      }
 
       try {
         const data = await apiRequest(`/api/predictions/${encodeURIComponent(match.id)}`, {
           method: "PUT",
-          body: JSON.stringify({ home, away }),
+          body: JSON.stringify({ home, away, qualifier, decision }),
         });
         state.predictions[user.id] ||= {};
         state.predictions[user.id][match.id] = {
           home,
           away,
+          qualifier,
+          decision,
           savedAt: data.savedAt,
         };
         saveState();
@@ -1051,7 +1205,7 @@ function openPredictionsDialog(matchId) {
   $("#predictionsMatchTitle").textContent = `${teamName(match.home)} vs ${teamName(match.away)}`;
   
   const resultInfo = match.status === "FINISHED" 
-    ? `<div class="result-final">Resultado final: <strong>${match.homeScore} – ${match.awayScore}</strong></div>`
+    ? `<div class="result-final">Resultado final: <strong>${matchResultSummary(match)}</strong></div>`
     : `<div class="result-pending">Partido en curso o por jugarse</div>`;
   
   $("#predictionsMatchInfo").innerHTML = `
@@ -1062,17 +1216,14 @@ function openPredictionsDialog(matchId) {
   const predictionsHtml = state.participants
     .map((person) => {
       const prediction = predictionFor(person.id, matchId);
-      const predText = prediction ? `${prediction.home} – ${prediction.away}` : "Sin predicción";
+      const predText = prediction ? predictionScoreText(prediction) : "Sin predicción";
+      const predMeta = predictionMetaText(match, prediction);
       
       let pointsEarned = "";
       if (match.status === "FINISHED" && prediction) {
-        if (prediction.home === match.homeScore && prediction.away === match.awayScore) {
-          pointsEarned = '<span class="points-badge exact">+2 Exacto</span>';
-        } else if (outcome(prediction.home, prediction.away) === outcome(match.homeScore, match.awayScore)) {
-          pointsEarned = '<span class="points-badge correct">+1 Acierto</span>';
-        } else {
-          pointsEarned = '<span class="points-badge wrong">0 pts</span>';
-        }
+        const scored = scorePrediction(prediction, match);
+        const badgeClass = scored.points >= 5 ? "exact" : scored.points > 0 ? "correct" : "wrong";
+        pointsEarned = `<span class="points-badge ${badgeClass}">${scored.points ? `+${scored.points}` : "0"} pts</span>`;
       }
       if (match.status === "FINISHED" && !prediction) {
         pointsEarned = '<span class="points-badge wrong">0 pts</span>';
@@ -1088,6 +1239,12 @@ function openPredictionsDialog(matchId) {
             <span class="pred-result">${predText}</span>
             ${pointsEarned}
           </div>
+          ${predMeta ? `<small class="pred-meta">${predMeta}</small>` : ""}
+          ${
+            match.status === "FINISHED" && prediction
+              ? `<small class="pred-breakdown">${scorePrediction(prediction, match).details.join(" · ") || "Sin puntos"}</small>`
+              : ""
+          }
         </div>
       `;
     })
@@ -1102,9 +1259,11 @@ function groupPredictionRows(match) {
   if (!locked) {
     const user = currentUser();
     const prediction = user ? predictionFor(user.id, match.id) : null;
+    const meta = predictionMetaText(match, prediction);
     return `
       <div class="group-prediction-private">
-        <strong>Tu pronóstico: ${prediction ? `${prediction.home} - ${prediction.away}` : "Pendiente"}</strong>
+        <strong>Tu pronóstico: ${prediction ? predictionScoreText(prediction, "-") : "Pendiente"}</strong>
+        ${meta ? `<small>${meta}</small>` : ""}
         <span>Los pronósticos del grupo se revelan 30 minutos antes del partido.</span>
       </div>
     `;
@@ -1113,12 +1272,13 @@ function groupPredictionRows(match) {
   return state.participants
     .map((person) => {
       const prediction = predictionFor(person.id, match.id);
-      const score = prediction ? `${prediction.home} - ${prediction.away}` : "Sin pronóstico";
+      const score = prediction ? predictionScoreText(prediction, "-") : "Sin pronóstico";
+      const meta = predictionMetaText(match, prediction);
       return `
         <div class="group-prediction-row ${person.id === state.currentUserId ? "current-user" : ""}">
           ${participantAvatar(person, "pred-avatar")}
           <strong>${escapeHtml(displayName(person))}</strong>
-          <span class="group-prediction-score">${score}</span>
+          <span class="group-prediction-score">${score}${meta ? `<small>${meta}</small>` : ""}</span>
         </div>
       `;
     })
@@ -1850,6 +2010,19 @@ function renderAdmin() {
               <option value="IN_PLAY" ${match.status === "IN_PLAY" ? "selected" : ""}>En juego</option>
               <option value="FINISHED" ${match.status === "FINISHED" ? "selected" : ""}>Finalizado</option>
             </select>
+            ${
+              isKnockoutMatch(match)
+                ? `<select data-admin-winner="${match.id}" aria-label="Clasificado">
+                    <option value="">Clasificado</option>
+                    <option value="home" ${match.winner === "home" ? "selected" : ""}>${teamName(match.home)}</option>
+                    <option value="away" ${match.winner === "away" ? "selected" : ""}>${teamName(match.away)}</option>
+                  </select>
+                  <select data-admin-decision="${match.id}" aria-label="Definición">
+                    <option value="">Definición</option>
+                    ${Object.entries(DECISION_METHODS).map(([value, label]) => `<option value="${value}" ${match.decision === value ? "selected" : ""}>${label}</option>`).join("")}
+                  </select>`
+                : ""
+            }
           </div>
           <button class="save-result" data-save-result="${match.id}" title="Guardar resultado">✓</button>
         </div>`,
@@ -1893,11 +2066,19 @@ function renderAdmin() {
       const homeValue = $(`[data-admin-match="${id}"][data-admin-side="home"]`).value;
       const awayValue = $(`[data-admin-match="${id}"][data-admin-side="away"]`).value;
       const status = $(`[data-admin-status="${id}"]`).value;
+      const winner = $(`[data-admin-winner="${id}"]`)?.value || "";
+      const decision = $(`[data-admin-decision="${id}"]`)?.value || "";
       match.homeScore = homeValue === "" ? null : Number(homeValue);
       match.awayScore = awayValue === "" ? null : Number(awayValue);
       match.status = status;
+      match.winner = winner || null;
+      match.decision = decision || null;
       if (status === "FINISHED" && (match.homeScore == null || match.awayScore == null)) {
         showToast("Ingresa ambos marcadores para finalizar.");
+        return;
+      }
+      if (status === "FINISHED" && isKnockoutMatch(match) && (!winner || !decision)) {
+        showToast("En eliminatoria define clasificado y método.");
         return;
       }
       try {
@@ -1907,6 +2088,8 @@ function renderAdmin() {
             homeScore: match.homeScore,
             awayScore: match.awayScore,
             status: match.status,
+            winner: match.winner,
+            decision: match.decision,
           }),
         });
         saveState();
@@ -2236,6 +2419,8 @@ function normalizeApiMatches(data) {
     const awayScore = match.score?.fullTime?.away ?? match.intAwayScore ?? match.awayScore ?? null;
     const status = normalizeApiStatus(match, { kickoff, homeScore, awayScore });
     const liveMinute = extractLiveMinute(match, { kickoff, status });
+    const winner = normalizeApiWinner(match, { homeScore, awayScore, status });
+    const decision = normalizeApiDecision(match);
     return {
       id: String(match.id || match.idEvent || `api-${index}-${kickoff}`),
       stage: match.group || match.stage || match.strGroup || "Mundial 2026",
@@ -2247,8 +2432,35 @@ function normalizeApiMatches(data) {
       homeScore: homeScore == null ? null : Number(homeScore),
       awayScore: awayScore == null ? null : Number(awayScore),
       liveMinute,
+      winner,
+      decision,
     };
   }).filter((match) => match.home && match.away && match.kickoff);
+}
+
+function normalizeApiWinner(match, { homeScore, awayScore, status }) {
+  const rawWinner = String(match.score?.winner || match.winner || match.fixture?.winner || "").toUpperCase();
+  if (rawWinner.includes("HOME")) return "home";
+  if (rawWinner.includes("AWAY")) return "away";
+  if (status === "FINISHED" && homeScore != null && awayScore != null && homeScore !== awayScore) {
+    return Number(homeScore) > Number(awayScore) ? "home" : "away";
+  }
+  return null;
+}
+
+function normalizeApiDecision(match) {
+  const raw = String(
+    match.score?.duration ||
+    match.duration ||
+    match.status?.long ||
+    match.status?.short ||
+    match.status ||
+    "",
+  ).toUpperCase().replace(/[\s-]+/g, "_");
+  if (raw.includes("PENAL")) return "PENALTIES";
+  if (raw.includes("EXTRA") || raw === "AET" || raw === "ET") return "EXTRA_TIME";
+  if (raw.includes("REGULAR") || raw === "FT" || raw === "FINISHED") return "REGULAR";
+  return null;
 }
 
 function normalizeApiStatus(match, { kickoff, homeScore, awayScore }) {
@@ -2339,8 +2551,10 @@ function updateMatchFromApi(existingMatch, apiMatch) {
   );
   const kickoffChanged = Boolean(apiMatch.kickoff) && existingMatch.kickoff !== apiMatch.kickoff;
   const liveMinuteChanged = existingMatch.liveMinute !== apiMatch.liveMinute;
+  const winnerChanged = apiMatch.winner != null && existingMatch.winner !== apiMatch.winner;
+  const decisionChanged = apiMatch.decision != null && existingMatch.decision !== apiMatch.decision;
 
-  if (!statusChanged && !scoresChanged && !kickoffChanged && !liveMinuteChanged) return false;
+  if (!statusChanged && !scoresChanged && !kickoffChanged && !liveMinuteChanged && !winnerChanged && !decisionChanged) return false;
 
   existingMatch.status = apiMatch.status;
   if (hasValidScores) {
@@ -2349,6 +2563,8 @@ function updateMatchFromApi(existingMatch, apiMatch) {
   }
   if (apiMatch.kickoff) existingMatch.kickoff = apiMatch.kickoff;
   existingMatch.liveMinute = ["IN_PLAY", "PAUSED"].includes(apiMatch.status) ? apiMatch.liveMinute : null;
+  existingMatch.winner = apiMatch.winner || existingMatch.winner || null;
+  existingMatch.decision = apiMatch.decision || existingMatch.decision || null;
   return true;
 }
 
@@ -2361,6 +2577,8 @@ async function persistSyncedResult(match) {
         homeScore: match.homeScore,
         awayScore: match.awayScore,
         status: match.status,
+        winner: match.winner,
+        decision: match.decision,
       }),
     });
   } catch (error) {

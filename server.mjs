@@ -224,13 +224,13 @@ async function handleApi(request, response, pathname) {
     const { rows } = await pool.query("select id, name, nickname, role from prm_users order by name");
     const predictions = await pool.query(
       `
-        select user_id, match_id, home_score, away_score, automatic, saved_at
+        select user_id, match_id, home_score, away_score, qualifier, decision, automatic, saved_at
         from prm_predictions
         where automatic = false
       `,
     );
     const results = await pool.query(
-      "select match_id, home_score, away_score, status from prm_match_results",
+      "select match_id, home_score, away_score, status, winner, decision from prm_match_results",
     );
     const config = await apiConfig();
     const settings = await appSettings();
@@ -253,21 +253,25 @@ async function handleApi(request, response, pathname) {
     const body = await readJson(request);
     const home = Number(body.home);
     const away = Number(body.away);
+    const qualifier = ["home", "away"].includes(body.qualifier) ? body.qualifier : null;
+    const decision = ["REGULAR", "EXTRA_TIME", "PENALTIES"].includes(body.decision) ? body.decision : null;
     if (!Number.isInteger(home) || !Number.isInteger(away) || home < 0 || away < 0 || home > 20 || away > 20) {
       sendJson(response, 400, { error: "Marcador inválido" });
       return;
     }
     await pool.query(
       `
-        insert into prm_predictions (user_id, match_id, home_score, away_score, automatic, saved_at)
-        values ($1,$2,$3,$4,false,now())
+        insert into prm_predictions (user_id, match_id, home_score, away_score, qualifier, decision, automatic, saved_at)
+        values ($1,$2,$3,$4,$5,$6,false,now())
         on conflict (user_id, match_id) do update set
           home_score=excluded.home_score,
           away_score=excluded.away_score,
+          qualifier=excluded.qualifier,
+          decision=excluded.decision,
           automatic=false,
           saved_at=now()
       `,
-      [user.id, matchId, home, away],
+      [user.id, matchId, home, away, qualifier, decision],
     );
     sendJson(response, 200, { ok: true, savedAt: new Date().toISOString() });
     return;
@@ -352,17 +356,21 @@ async function handleApi(request, response, pathname) {
   if (request.method === "PUT" && pathname.startsWith("/api/results/")) {
     const matchId = decodeURIComponent(pathname.slice("/api/results/".length));
     const body = await readJson(request);
+    const winner = ["home", "away"].includes(body.winner) ? body.winner : null;
+    const decision = ["REGULAR", "EXTRA_TIME", "PENALTIES"].includes(body.decision) ? body.decision : null;
     await pool.query(
       `
-        insert into prm_match_results (match_id, home_score, away_score, status, updated_at)
-        values ($1,$2,$3,$4,now())
+        insert into prm_match_results (match_id, home_score, away_score, status, winner, decision, updated_at)
+        values ($1,$2,$3,$4,$5,$6,now())
         on conflict (match_id) do update set
           home_score=excluded.home_score,
           away_score=excluded.away_score,
           status=excluded.status,
+          winner=excluded.winner,
+          decision=excluded.decision,
           updated_at=now()
       `,
-      [matchId, body.homeScore ?? null, body.awayScore ?? null, body.status || "SCHEDULED"],
+      [matchId, body.homeScore ?? null, body.awayScore ?? null, body.status || "SCHEDULED", winner, decision],
     );
     sendJson(response, 200, { ok: true });
     return;
