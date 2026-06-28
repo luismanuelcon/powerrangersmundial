@@ -37,6 +37,7 @@ function matchWinnerSide(match) {
 function scorePrediction(prediction, match) {
   const empty = { applies: false, exact: 0, correct: 0, points: 0, details: [] };
   if (!prediction || prediction.automatic) return empty;
+  if (isKnockoutMatch(match) && !KNOCKOUT_SCORING_ENABLED) return empty;
   const usesKnockoutScoring = KNOCKOUT_SCORING_ENABLED && isKnockoutMatch(match);
   const validStatuses = usesKnockoutScoring ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
   if (!validStatuses.includes(match.status) || match.homeScore == null || match.awayScore == null) {
@@ -97,14 +98,14 @@ const finalByPenalties = {
 
 const cases = [
   {
-    name: "eliminatoria mantiene puntuacion historica por marcador exacto",
+    name: "eliminatoria desactivada no altera ranking",
     actual: scorePrediction({ home: 1, away: 1, qualifier: "away", decision: "PENALTIES" }, finalByPenalties).points,
-    expected: 2,
+    expected: 0,
   },
   {
-    name: "eliminatoria mantiene puntuacion historica por resultado",
+    name: "eliminatoria desactivada ignora resultado y clasificado",
     actual: scorePrediction({ home: 2, away: 2, qualifier: "away", decision: "REGULAR" }, finalByPenalties).points,
-    expected: 1,
+    expected: 0,
   },
   {
     name: "sin pronostico no suma",

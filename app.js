@@ -616,6 +616,7 @@ function knockoutPhaseBonus(match) {
 function scorePrediction(prediction, match) {
   const empty = { applies: false, exact: 0, correct: 0, points: 0, details: [] };
   if (!prediction || prediction.automatic) return empty;
+  if (isKnockoutMatch(match) && !KNOCKOUT_SCORING_ENABLED) return empty;
 
   const usesKnockoutScoring = KNOCKOUT_SCORING_ENABLED && isKnockoutMatch(match);
   const validStatuses = usesKnockoutScoring ? ["FINISHED"] : ["FINISHED", "IN_PLAY", "PAUSED"];
