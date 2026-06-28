@@ -1317,6 +1317,7 @@ function renderGroupPredictions() {
   };
   const dates = filterDates[groupPredictionsDateFilter];
   const matches = [...state.matches]
+    .filter((match) => isKnockoutMatch(match))
     .filter((match) => !dates || dates.includes(bogotaDateKey(match.kickoff)))
     .sort(dayAwareSort);
   const groups = matches.reduce((result, match) => {
@@ -1671,12 +1672,72 @@ function applyRoundOf32Projection(projection) {
 
 async function refreshKnockoutFixturesFromStandings() {
   if (!state.api?.tokenConfigured) return false;
+  const officialApplied = await refreshKnockoutFixturesFromApi();
+  if (officialApplied) return true;
   const standings = await fetchStandings();
   const projection = projectedQualifiersFromStandings(standings);
   return applyRoundOf32Projection(projection);
 }
 
-function knockoutTeamMarkup(team, fallback) {
+async function fetchApiMatches() {
+  if (!state.api?.tokenConfigured) return [];
+  const response = await fetch("/api/football-proxy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resource: "matches" }),
+  });
+  if (!response.ok) return [];
+  return normalizeApiMatches(await response.json());
+}
+
+function applyOfficialKnockoutFixtures(apiMatches) {
+  const officialByStage = new Map();
+  apiMatches
+    .filter((match) => isKnockoutMatch(match))
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff))
+    .forEach((match) => {
+      const list = officialByStage.get(match.stage) || [];
+      list.push(match);
+      officialByStage.set(match.stage, list);
+    });
+
+  let changed = false;
+  state.matches = state.matches.map((match) => {
+    const round = KNOCKOUT_ROUNDS.find((item) => item.name === match.stage);
+    if (!round || !match.code) return match;
+    const slotIndex = round.matches.findIndex((slot) => slot.code === match.code);
+    const official = officialByStage.get(round.name)?.[slotIndex];
+    if (!official) return match;
+    const next = {
+      ...match,
+      home: official.home,
+      away: official.away,
+      kickoff: official.kickoff,
+      venue: official.venue,
+      status: official.status,
+      homeScore: official.homeScore,
+      awayScore: official.awayScore,
+      liveMinute: official.liveMinute,
+      winner: official.winner,
+      decision: official.decision,
+      apiMatchId: official.id,
+      source: "official-api",
+    };
+    const changedFields = ["home", "away", "kickoff", "venue", "status", "homeScore", "awayScore", "liveMinute", "winner", "decision", "apiMatchId"]
+      .some((field) => next[field] !== match[field]);
+    changed ||= changedFields;
+    return changedFields ? next : match;
+  });
+  return changed;
+}
+
+async function refreshKnockoutFixturesFromApi() {
+  const apiMatches = await fetchApiMatches();
+  if (!apiMatches.length) return false;
+  return applyOfficialKnockoutFixtures(apiMatches);
+}
+
+function legacyKnockoutTeamMarkup(team, fallback) {
   if (!team) {
     return `
       <div class="knockout-team pending">
@@ -1696,7 +1757,61 @@ function knockoutTeamMarkup(team, fallback) {
   `;
 }
 
+function isPendingKnockoutLabel(value) {
+  return /clasificado|ganador|perdedor|grupo|definir/i.test(String(value || ""));
+}
+
+function knockoutTeamMarkup(team, fallback) {
+  if (!team) {
+    if (!isPendingKnockoutLabel(fallback)) {
+      return `
+        <div class="knockout-team projected">
+          <span class="knockout-team-main">
+            <span class="mini-flag">${flagMarkup(fallback, "small")}</span>
+            ${escapeHtml(teamName(fallback))}
+          </span>
+          <small>Oficial FIFA</small>
+        </div>
+      `;
+    }
+    return `
+      <div class="knockout-team pending">
+        <span class="knockout-team-main">${escapeHtml(fallback)}</span>
+        <small>Por definir</small>
+      </div>
+    `;
+  }
+  const meta = team.seed
+    ? `${escapeHtml(team.seed)} ${escapeHtml(team.group)} · ${team.points} pts`
+    : "Oficial FIFA";
+  return `
+    <div class="knockout-team projected">
+      <span class="knockout-team-main">
+        <span class="mini-flag">${flagMarkup(team.rawName, "small")}</span>
+        ${escapeHtml(team.name)}
+      </span>
+      <small>${meta}</small>
+    </div>
+  `;
+}
+
 function knockoutRoundMatches(round, projection) {
+  const officialMatches = round.matches.map((slot, index) => {
+    const current = state.matches.find((match) => match.code === slot.code);
+    if (!current || current.source !== "official-api") return null;
+    return {
+      code: slot.code,
+      home: current.home,
+      away: current.away,
+      kickoff: current.kickoff,
+      status: current.status,
+      homeScore: current.homeScore,
+      awayScore: current.awayScore,
+    };
+  });
+  if (officialMatches.some(Boolean)) {
+    return round.matches.map((slot, index) => officialMatches[index] || slot);
+  }
   if (round.name === "Ronda de 32") return projectedRoundOf32Matches(projection);
   return round.matches;
 }
@@ -1705,11 +1820,15 @@ async function renderKnockoutBracket() {
   const container = $("#knockoutBracket");
   if (!container) return;
   container.innerHTML = '<div class="standings-loading">Armando llaves con posiciones actuales...</div>';
+  await refreshKnockoutFixturesFromApi().catch(console.error);
   const standings = await fetchStandings();
   const projection = projectedQualifiersFromStandings(standings);
-  applyRoundOf32Projection(projection);
+  if (!state.matches.some((match) => match.source === "official-api")) {
+    applyRoundOf32Projection(projection);
+  }
   const qualifierCount = projection?.qualifiers.length || 0;
   const bestThirdCount = projection?.bestThirds.length || 0;
+  const hasOfficialKnockouts = state.matches.some((match) => match.source === "official-api");
 
   container.innerHTML = `
     <div class="knockout-summary">
@@ -1717,7 +1836,7 @@ async function renderKnockoutBracket() {
       <div>
         <span class="eyebrow">COPA MUNDIAL 2026</span>
         <strong>Llaves de eliminacion directa</strong>
-        <small>${projection ? `${qualifierCount} clasificados proyectados desde Posiciones, incluyendo ${bestThirdCount} mejores terceros.` : "Activa la API de posiciones para proyectar los cruces desde la tabla actual."}</small>
+        <small>${hasOfficialKnockouts ? "Cruces oficiales cargados desde la API de partidos FIFA." : projection ? `${qualifierCount} clasificados proyectados desde Posiciones, incluyendo ${bestThirdCount} mejores terceros.` : "Activa la API de posiciones para proyectar los cruces desde la tabla actual."}</small>
       </div>
     </div>
     ${projection ? `
@@ -2448,7 +2567,7 @@ function normalizeApiMatches(data) {
     const decision = normalizeApiDecision(match);
     return {
       id: String(match.id || match.idEvent || `api-${index}-${kickoff}`),
-      stage: match.group || match.stage || match.strGroup || "Mundial 2026",
+      stage: normalizeApiStage(match.group || match.stage || match.strGroup || "Mundial 2026"),
       home,
       away,
       kickoff,
@@ -2461,6 +2580,29 @@ function normalizeApiMatches(data) {
       decision,
     };
   }).filter((match) => match.home && match.away && match.kickoff);
+}
+
+function normalizeApiStage(stage) {
+  const raw = String(stage || "").trim();
+  const key = raw.toUpperCase().replace(/[\s-]+/g, "_");
+  const stageMap = {
+    LAST_32: "Ronda de 32",
+    ROUND_OF_32: "Ronda de 32",
+    ROUND_32: "Ronda de 32",
+    LAST_16: "Octavos de final",
+    ROUND_OF_16: "Octavos de final",
+    ROUND_16: "Octavos de final",
+    QUARTER_FINALS: "Cuartos de final",
+    QUARTERFINAL: "Cuartos de final",
+    QUARTER_FINAL: "Cuartos de final",
+    SEMI_FINALS: "Semifinales",
+    SEMIFINALS: "Semifinales",
+    SEMI_FINAL: "Semifinales",
+    THIRD_PLACE: "Tercer puesto",
+    THIRD_PLACE_PLAYOFF: "Tercer puesto",
+    FINAL: "Final",
+  };
+  return stageMap[key] || raw.replace("GROUP_", "Grupo ");
 }
 
 function normalizeApiWinner(match, { homeScore, awayScore, status }) {
