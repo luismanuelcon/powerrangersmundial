@@ -906,6 +906,7 @@ async function refreshSessionFromDatabase() {
   const previousUserId = state.currentUserId;
   sessionRefreshPromise = (async () => {
     const authenticated = await restoreSession();
+    if (authenticated) await refreshKnockoutFixturesFromStandings().catch(console.error);
     if (authenticated && isAdmin()) await loadAdminUsers().catch(console.error);
     if (previousUserId && state.currentUserId && previousUserId !== state.currentUserId) {
       showToast("Sesión actualizada desde la base de datos");
@@ -1642,6 +1643,35 @@ function projectedRoundOf32Matches(projection) {
   }));
 }
 
+function applyRoundOf32Projection(projection) {
+  if (!projection?.qualifiers?.length) return false;
+  const projectedMatches = projectedRoundOf32Matches(projection);
+  let changed = false;
+  state.matches = state.matches.map((match) => {
+    const projected = projectedMatches.find((item) => `wc26-${item.code.toLowerCase()}` === match.id);
+    if (!projected) return match;
+    const home = projected.home?.rawName || projected.home?.name || match.home;
+    const away = projected.away?.rawName || projected.away?.name || match.away;
+    if (home === match.home && away === match.away) return match;
+    changed = true;
+    return {
+      ...match,
+      home,
+      away,
+      projectedHomeSeed: projected.home?.seed || "",
+      projectedAwaySeed: projected.away?.seed || "",
+    };
+  });
+  return changed;
+}
+
+async function refreshKnockoutFixturesFromStandings() {
+  if (!state.api?.tokenConfigured) return false;
+  const standings = await fetchStandings();
+  const projection = projectedQualifiersFromStandings(standings);
+  return applyRoundOf32Projection(projection);
+}
+
 function knockoutTeamMarkup(team, fallback) {
   if (!team) {
     return `
@@ -1673,6 +1703,7 @@ async function renderKnockoutBracket() {
   container.innerHTML = '<div class="standings-loading">Armando llaves con posiciones actuales...</div>';
   const standings = await fetchStandings();
   const projection = projectedQualifiersFromStandings(standings);
+  applyRoundOf32Projection(projection);
   const qualifierCount = projection?.qualifiers.length || 0;
   const bestThirdCount = projection?.bestThirds.length || 0;
 
@@ -3003,6 +3034,7 @@ window.addEventListener("hashchange", () => {
 async function initializeApp() {
   await loadBroadcastSchedule();
   const authenticated = await restoreSession();
+  if (authenticated) await refreshKnockoutFixturesFromStandings().catch(console.error);
   if (authenticated && isAdmin()) {
     await loadAdminUsers().catch(console.error);
   }
