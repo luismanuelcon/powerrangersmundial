@@ -58,88 +58,8 @@ function defaultState() {
 }
 
 function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved) return defaultState();
-    const participants = (saved.participants || []).map(({ id, name, nickname, role }) => ({
-      id,
-      name,
-      nickname,
-      role,
-    }));
-    const validUser = participants.some((person) => person.id === saved.currentUserId);
-    const savedMatches = Array.isArray(saved.matches) ? saved.matches : [];
-    const savedById = new Map(savedMatches.map((match) => [match.id, match]));
-    const predictions = structuredClone(saved.predictions || {});
-    Object.values(predictions).forEach((userPredictions) => {
-      Object.entries(userPredictions).forEach(([matchId, prediction]) => {
-        if (prediction?.automatic) delete userPredictions[matchId];
-      });
-    });
-    const officialIds = new Set(initialMatches.map((match) => match.id));
-    const matches = initialMatches.map((official) => {
-      const previous = savedById.get(official.id);
-      const sameFixture =
-        previous &&
-        normalizeCountryName(previous.home) === normalizeCountryName(official.home) &&
-        normalizeCountryName(previous.away) === normalizeCountryName(official.away);
-
-      if (previous && !sameFixture) {
-        Object.values(predictions).forEach((userPredictions) => {
-          delete userPredictions[official.id];
-        });
-      }
-
-      return sameFixture
-        ? {
-          ...official,
-          status: previous.status,
-          homeScore: previous.homeScore,
-          awayScore: previous.awayScore,
-          winner: previous.winner,
-          decision: previous.decision,
-          liveMinute: previous.liveMinute,
-        }
-        : official;
-    });
-    // Solo agregar partidos guardados que no dupliquen equipos de partidos oficiales
-    const officialTeamPairs = new Set(initialMatches.map((m) => 
-      `${normalizeCountryName(m.home)}|${normalizeCountryName(m.away)}`
-    ));
-    matches.push(...savedMatches.filter((match) => {
-      if (officialIds.has(match.id)) return false;
-      const teamPair = `${normalizeCountryName(match.home)}|${normalizeCountryName(match.away)}`;
-      return !officialTeamPairs.has(teamPair);
-    }));
-    
-    // Limpiar duplicados existentes (por equipos normalizados)
-    const seenTeamPairs = new Set();
-    const dedupedMatches = matches.filter((match) => {
-      const teamPair = `${normalizeCountryName(match.home)}|${normalizeCountryName(match.away)}`;
-      if (seenTeamPairs.has(teamPair)) return false;
-      seenTeamPairs.add(teamPair);
-      return true;
-    });
-
-    return {
-      ...defaultState(),
-      ...saved,
-      participants,
-      predictions,
-      api: {
-        url: saved.api?.url || defaultState().api.url,
-        tokenConfigured: Boolean(saved.api?.tokenConfigured),
-      },
-      settings: {
-        ...defaultState().settings,
-        ...(saved.settings || {}),
-      },
-      currentUserId: validUser ? saved.currentUserId : null,
-      matches: dedupedMatches,
-    };
-  } catch {
-    return defaultState();
-  }
+  localStorage.removeItem(STORAGE_KEY);
+  return defaultState();
 }
 
 let state = loadState();
@@ -154,25 +74,13 @@ let rankingDragTimer;
 let lastRankingDragAt = 0;
 let rankingDragAudio;
 let autoSyncRunning = false;
+let sessionRefreshPromise = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    ...state,
-    settings: state.settings,
-    api: {
-      url: state.api.url,
-      tokenConfigured: Boolean(state.api.tokenConfigured),
-    },
-    participants: state.participants.map(({ id, name, nickname, role }) => ({
-      id,
-      name,
-      nickname,
-      role,
-    })),
-  }));
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 saveState();
@@ -923,12 +831,32 @@ async function restoreSession() {
     if (error.status !== 401) console.error(error);
     state.participants = [];
     state.currentUserId = null;
+    state.predictions = {};
+    state.matches = initialMatches.map((match) => ({ ...match }));
+    adminUsers = [];
     saveState();
     return false;
   }
 }
 
-function navigate(viewId) {
+async function refreshSessionFromDatabase() {
+  if (sessionRefreshPromise) return sessionRefreshPromise;
+  const previousUserId = state.currentUserId;
+  sessionRefreshPromise = (async () => {
+    const authenticated = await restoreSession();
+    if (authenticated && isAdmin()) await loadAdminUsers().catch(console.error);
+    if (previousUserId && state.currentUserId && previousUserId !== state.currentUserId) {
+      showToast("Sesión actualizada desde la base de datos");
+    }
+    return authenticated;
+  })().finally(() => {
+    sessionRefreshPromise = null;
+  });
+  return sessionRefreshPromise;
+}
+
+async function navigate(viewId, options = {}) {
+  if (options.refresh !== false) await refreshSessionFromDatabase();
   if (viewId === "admin" && !isAdmin()) return;
   $$(".view").forEach((view) => view.classList.toggle("active-view", view.id === viewId));
   $$("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
@@ -1963,7 +1891,7 @@ async function saveUser(event) {
     $("#userDialog").close();
     event.target.reset();
     renderAll();
-    navigate("admin");
+    navigate("admin", { refresh: false });
     showToast(id ? "Usuario actualizado" : "Usuario agregado");
   } catch (error) {
     showToast(error.message);
@@ -2094,7 +2022,7 @@ function renderAdmin() {
         });
         saveState();
         renderAll();
-        navigate("admin");
+        navigate("admin", { refresh: false });
         showToast("Resultado actualizado");
       } catch (error) {
         showToast(error.message);
@@ -2646,7 +2574,7 @@ async function syncApi() {
     await Promise.all(changedMatches.map(persistSyncedResult));
     saveState();
     renderAll();
-    navigate("admin");
+    navigate("admin", { refresh: false });
     const msg = liveCount > 0 
       ? `${updatedCount} partidos (${liveCount} en vivo)` 
       : `${updatedCount} partidos actualizados (API: ${firstMatch?.status || "sin datos"})`;
@@ -2904,7 +2832,7 @@ $("#profileButton").addEventListener("click", () => {
         adminUsers = [];
         saveState();
         renderAll();
-        navigate("inicio");
+        navigate("inicio", { refresh: false });
         $("#authDialog").showModal();
       });
     }
@@ -3019,9 +2947,9 @@ async function initializeApp() {
   renderAll();
   const initialView = window.location.hash.slice(1);
   if (["inicio", "partidos", "pronosticos", "ranking", "estadisticas", "grupos", "llaves", "admin"].includes(initialView)) {
-    navigate(initialView);
+    navigate(initialView, { refresh: false });
   } else {
-    navigate("ranking");
+    navigate("ranking", { refresh: false });
   }
   if (!authenticated) setTimeout(() => $("#authDialog").showModal(), 300);
   
