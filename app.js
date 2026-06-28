@@ -35,6 +35,11 @@ const KNOCKOUT_PHASE_BONUS = {
   Final: 5,
 };
 
+const KNOCKOUT_STAGES = new Set([
+  ...Object.keys(KNOCKOUT_PHASE_BONUS),
+  "Tercer puesto",
+]);
+
 const demoParticipants = [];
 
 function defaultState() {
@@ -526,7 +531,7 @@ function outcome(home, away) {
 }
 
 function isKnockoutMatch(match) {
-  return !/^Grupo\s/i.test(String(match.stage || ""));
+  return KNOCKOUT_STAGES.has(String(match.stage || "").trim());
 }
 
 function decisionLabel(value) {

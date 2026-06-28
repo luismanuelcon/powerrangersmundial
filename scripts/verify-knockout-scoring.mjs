@@ -12,13 +12,18 @@ const KNOCKOUT_PHASE_BONUS = {
   Final: 5,
 };
 
+const KNOCKOUT_STAGES = new Set([
+  ...Object.keys(KNOCKOUT_PHASE_BONUS),
+  "Tercer puesto",
+]);
+
 function outcome(home, away) {
   if (home === away) return "DRAW";
   return home > away ? "HOME" : "AWAY";
 }
 
 function isKnockoutMatch(match) {
-  return !/^Grupo\s/i.test(String(match.stage || ""));
+  return KNOCKOUT_STAGES.has(String(match.stage || "").trim());
 }
 
 function matchWinnerSide(match) {
@@ -106,6 +111,11 @@ const cases = [
   {
     name: "grupo conserva regla 2/1",
     actual: scorePrediction({ home: 2, away: 0 }, { stage: "Grupo A", status: "FINISHED", homeScore: 1, awayScore: 0 }).points,
+    expected: 1,
+  },
+  {
+    name: "stage generico conserva regla actual 2/1",
+    actual: scorePrediction({ home: 2, away: 0 }, { stage: "Mundial 2026", status: "FINISHED", homeScore: 1, awayScore: 0 }).points,
     expected: 1,
   },
 ];
