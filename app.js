@@ -923,6 +923,7 @@ async function refreshSessionFromDatabase() {
 }
 
 async function navigate(viewId, options = {}) {
+  if (viewId === "grupos") viewId = "pronosticos";
   if (options.refresh !== false) await refreshSessionFromDatabase();
   if (viewId === "admin" && !isAdmin()) return;
   $$(".view").forEach((view) => view.classList.toggle("active-view", view.id === viewId));
@@ -932,7 +933,6 @@ async function navigate(viewId, options = {}) {
   if (viewId === "pronosticos") renderGroupPredictions();
   if (viewId === "ranking") renderRanking();
   if (viewId === "estadisticas") renderStatistics();
-  if (viewId === "grupos") renderStandings();
   if (viewId === "llaves") renderKnockoutBracket();
   if (viewId === "admin") renderAdmin();
 }
