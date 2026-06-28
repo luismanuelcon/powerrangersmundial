@@ -16,6 +16,7 @@ const port = Number(process.env.PORT || 4200);
 const root = process.cwd();
 const secret = process.env.SESSION_SECRET;
 const defaultApiUrl = "https://api.football-data.org/v4/competitions/WC/matches";
+const assetVersion = process.env.APP_VERSION || String(Date.now());
 const blockedPaths = new Set([
   ".env.local",
   "users.local.js",
@@ -461,10 +462,26 @@ createServer(async (request, response) => {
       return;
     }
 
-    response.writeHead(200, {
-      "Cache-Control": "no-store",
-      "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream",
-    });
+    const extension = extname(filePath);
+    const contentType = mimeTypes[extension] || "application/octet-stream";
+    const cacheHeaders = {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+      "Content-Type": contentType,
+    };
+
+    if (requested === "index.html") {
+      const html = readFileSync(filePath, "utf8")
+        .replace('href="styles.css"', `href="styles.css?v=${assetVersion}"`)
+        .replace('src="fixtures.js"', `src="fixtures.js?v=${assetVersion}"`)
+        .replace('src="app.js"', `src="app.js?v=${assetVersion}"`);
+      response.writeHead(200, cacheHeaders);
+      response.end(html);
+      return;
+    }
+
+    response.writeHead(200, cacheHeaders);
     createReadStream(filePath).pipe(response);
   } catch (error) {
     console.error(error);
