@@ -1040,12 +1040,14 @@ function updateCountdown(match) {
 }
 
 function renderStageFilters() {
+  const availableMatches = state.matches.filter((match) => isKnockoutMatch(match));
   const stages = [
     "Todos",
-    ...[...new Set(state.matches.map((match) => match.stage))].sort((a, b) =>
+    ...[...new Set(availableMatches.map((match) => match.stage))].sort((a, b) =>
       a.localeCompare(b, "es", { numeric: true }),
     ),
   ];
+  if (!stages.includes(activeStage)) activeStage = "Todos";
   $("#stageFilters").innerHTML = stages
     .map(
       (stage) =>
@@ -1111,6 +1113,7 @@ function listMatchCard(match, extraClass = "") {
 function renderMatchesPage() {
   renderStageFilters();
   const filtered = state.matches
+    .filter((match) => isKnockoutMatch(match))
     .filter((match) => activeStage === "Todos" || match.stage === activeStage)
     .filter((match) => `${match.home} ${match.away} ${teamName(match.home)} ${teamName(match.away)}`.toLowerCase().includes(searchTerm))
     .sort(dayAwareSort);
