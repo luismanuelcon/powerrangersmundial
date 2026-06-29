@@ -17,7 +17,7 @@ const KNOCKOUT_STAGES = new Set([
   "Tercer puesto",
 ]);
 
-const KNOCKOUT_SCORING_ENABLED = false;
+const KNOCKOUT_SCORING_ENABLED = true;
 
 function outcome(home, away) {
   if (home === away) return "DRAW";
@@ -98,14 +98,14 @@ const finalByPenalties = {
 
 const cases = [
   {
-    name: "eliminatoria desactivada no altera ranking",
+    name: "empate exacto + clasificado + penales + bono final + perfecto",
     actual: scorePrediction({ home: 1, away: 1, qualifier: "away", decision: "PENALTIES" }, finalByPenalties).points,
-    expected: 0,
+    expected: 19,
   },
   {
-    name: "eliminatoria desactivada ignora resultado y clasificado",
+    name: "resultado correcto + clasificado en final",
     actual: scorePrediction({ home: 2, away: 2, qualifier: "away", decision: "REGULAR" }, finalByPenalties).points,
-    expected: 0,
+    expected: 12,
   },
   {
     name: "sin pronostico no suma",

@@ -35,7 +35,7 @@ const KNOCKOUT_PHASE_BONUS = {
   Final: 5,
 };
 
-const KNOCKOUT_SCORING_ENABLED = false;
+const KNOCKOUT_SCORING_ENABLED = true;
 
 const KNOCKOUT_STAGES = new Set([
   ...Object.keys(KNOCKOUT_PHASE_BONUS),
