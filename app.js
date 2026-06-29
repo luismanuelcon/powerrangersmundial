@@ -13,7 +13,7 @@ function knockoutSlots(count, startNumber, sourceStart = null) {
 }
 
 const KNOCKOUT_ROUNDS = [
-  { name: "Ronda de 32", dates: "28 de junio - 3 de julio", note: "Los cruces se actualizan al cerrar la fase de grupos.", matches: knockoutSlots(16, 73) },
+  { name: "Ronda de 32", dates: "28 de junio - 3 de julio", note: "Cruces oficiales de eliminacion directa.", matches: knockoutSlots(16, 73) },
   { name: "Octavos de final", dates: "4 - 7 de julio", note: "Avanzan los ganadores de la ronda de 32.", matches: knockoutSlots(8, 89, 73) },
   { name: "Cuartos de final", dates: "9 - 11 de julio", note: "Camino directo a semifinales.", matches: knockoutSlots(4, 97, 89) },
   { name: "Semifinales", dates: "14 - 15 de julio", note: "Los dos ganadores juegan la final.", matches: knockoutSlots(2, 101, 97) },
@@ -1262,7 +1262,7 @@ function groupPredictionRows(match) {
       <div class="group-prediction-private">
         <strong>Tu pronóstico: ${prediction ? predictionScoreText(prediction, "-") : "Pendiente"}</strong>
         ${meta ? `<small>${meta}</small>` : ""}
-        <span>Los pronósticos del grupo se revelan 30 minutos antes del partido.</span>
+        <span>Los pronósticos se revelan 30 minutos antes del partido.</span>
       </div>
     `;
   }
@@ -2472,7 +2472,7 @@ async function createReminderImage(match, pending) {
   context.font = '600 29px "DM Sans", sans-serif';
   wrapCanvasText(
     context,
-    pendingNames.length ? pendingNames.join(" · ") : "El grupo ya completó sus pronósticos.",
+    pendingNames.length ? pendingNames.join(" · ") : "Todos ya completaron sus pronósticos.",
     70,
     titleY + 345,
     940,
