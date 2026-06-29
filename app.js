@@ -3014,7 +3014,7 @@ function rankingMessage() {
   return [
     "⚽ *POWER RANGERS MUNDIAL*",
     "",
-    "🏆 *Tabla de posiciones*",
+    "🏆 *Ranking*",
     ...lines,
     "",
     "¿Quién terminará mandando en esta polla?",
