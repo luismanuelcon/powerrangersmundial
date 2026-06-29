@@ -67,7 +67,8 @@ function scorePrediction(prediction, match) {
     details.push("+3 resultado 90'");
   }
 
-  const qualifierCorrect = prediction.qualifier === matchWinnerSide(match);
+  const matchWasDraw = match.homeScore === match.awayScore;
+  const qualifierCorrect = matchWasDraw && prediction.qualifier === matchWinnerSide(match);
   if (qualifierCorrect) {
     const bonus = KNOCKOUT_PHASE_BONUS[match.stage] || 0;
     points += 4 + bonus;
@@ -96,6 +97,15 @@ const finalByPenalties = {
   decision: "PENALTIES",
 };
 
+const roundOf32Brazil = {
+  stage: "Ronda de 32",
+  status: "FINISHED",
+  homeScore: 2,
+  awayScore: 1,
+  winner: "home",
+  decision: "REGULAR",
+};
+
 const cases = [
   {
     name: "empate exacto + clasificado + penales + bono final + perfecto",
@@ -103,9 +113,19 @@ const cases = [
     expected: 19,
   },
   {
-    name: "resultado correcto + clasificado en final",
+    name: "resultado correcto + clasificado en empate de final",
     actual: scorePrediction({ home: 2, away: 2, qualifier: "away", decision: "REGULAR" }, finalByPenalties).points,
     expected: 12,
+  },
+  {
+    name: "marcador exacto con ganador no duplica clasificado",
+    actual: scorePrediction({ home: 2, away: 1, qualifier: "home", decision: "REGULAR" }, roundOf32Brazil).points,
+    expected: 7,
+  },
+  {
+    name: "resultado correcto con ganador no duplica clasificado",
+    actual: scorePrediction({ home: 3, away: 1, qualifier: "home", decision: "REGULAR" }, roundOf32Brazil).points,
+    expected: 5,
   },
   {
     name: "sin pronostico no suma",

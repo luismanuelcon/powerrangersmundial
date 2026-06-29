@@ -655,8 +655,9 @@ function scorePrediction(prediction, match) {
     details.push("+3 resultado 90'");
   }
 
+  const matchWasDraw = match.homeScore === match.awayScore;
   const winner = matchWinnerSide(match);
-  const qualifierCorrect = Boolean(winner && prediction.qualifier === winner);
+  const qualifierCorrect = Boolean(matchWasDraw && winner && prediction.qualifier === winner);
   if (qualifierCorrect) {
     const bonus = knockoutPhaseBonus(match);
     points += 4 + bonus;
