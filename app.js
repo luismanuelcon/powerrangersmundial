@@ -926,6 +926,9 @@ async function navigate(viewId, options = {}) {
   if (viewId === "grupos") viewId = "pronosticos";
   if (options.refresh !== false) await refreshSessionFromDatabase();
   if (viewId === "admin" && !isAdmin()) return;
+  if (["partidos", "pronosticos", "ranking", "llaves"].includes(viewId)) {
+    await refreshKnockoutFixturesFromApi().catch(console.error);
+  }
   $$(".view").forEach((view) => view.classList.toggle("active-view", view.id === viewId));
   $$("[data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
   window.scrollTo({ top: 0, behavior: "smooth" });
