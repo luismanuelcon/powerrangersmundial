@@ -75,12 +75,13 @@ function scorePrediction(prediction, match) {
     details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
   }
 
-  if (match.decision && prediction.decision === match.decision) {
+  const decisionCorrect = Boolean(qualifierCorrect && match.decision && prediction.decision === match.decision);
+  if (decisionCorrect) {
     points += 2;
     details.push("+2 definicion");
   }
 
-  if (exactScore && qualifierCorrect && prediction.decision === match.decision) {
+  if (exactScore && qualifierCorrect && decisionCorrect) {
     points += 3;
     details.push("+3 perfecto");
   }
@@ -118,14 +119,24 @@ const cases = [
     expected: 12,
   },
   {
+    name: "definicion no suma si falla clasificado",
+    actual: scorePrediction({ home: 1, away: 1, qualifier: "home", decision: "PENALTIES" }, finalByPenalties).points,
+    expected: 5,
+  },
+  {
+    name: "definicion no suma si partido tiene ganador en 90",
+    actual: scorePrediction({ home: 3, away: 1, qualifier: "home", decision: "REGULAR" }, roundOf32Brazil).points,
+    expected: 3,
+  },
+  {
     name: "marcador exacto con ganador no duplica clasificado",
     actual: scorePrediction({ home: 2, away: 1, qualifier: "home", decision: "REGULAR" }, roundOf32Brazil).points,
-    expected: 7,
+    expected: 5,
   },
   {
     name: "resultado correcto con ganador no duplica clasificado",
     actual: scorePrediction({ home: 3, away: 1, qualifier: "home", decision: "REGULAR" }, roundOf32Brazil).points,
-    expected: 5,
+    expected: 3,
   },
   {
     name: "sin pronostico no suma",

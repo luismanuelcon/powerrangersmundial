@@ -664,7 +664,7 @@ function scorePrediction(prediction, match) {
     details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
   }
 
-  const decisionCorrect = Boolean(match.decision && prediction.decision === match.decision);
+  const decisionCorrect = Boolean(qualifierCorrect && match.decision && prediction.decision === match.decision);
   if (decisionCorrect) {
     points += 2;
     details.push("+2 definicion");
