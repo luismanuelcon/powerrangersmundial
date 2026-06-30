@@ -719,16 +719,39 @@ function knockoutPredictionControls(match, prediction, compact = false) {
   `;
 }
 
+function matchMainScoreText(match, separator = "-") {
+  if (match.homeScore == null || match.awayScore == null) return "";
+  return `${match.homeScore} ${separator} ${match.awayScore}`;
+}
+
+function penaltyShootoutScore(match) {
+  const home = match.penaltyHomeScore;
+  const away = match.penaltyAwayScore;
+  if (home == null || away == null) return null;
+  return { home: Number(home), away: Number(away) };
+}
+
+function matchScoreDisplay(match, compact = false) {
+  if (match.homeScore == null || match.awayScore == null) return "";
+  const penalties = penaltyShootoutScore(match);
+  return `
+    <span class="main-score">${matchMainScoreText(match, "-")}</span>
+    ${penalties ? `<span class="penalty-score">Pen ${penalties.home}-${penalties.away}</span>` : ""}
+  `;
+}
+
 function matchResultSummary(match) {
   if (match.status !== "FINISHED") return "";
-  const score = `${match.homeScore} – ${match.awayScore}`;
+  const score = matchMainScoreText(match);
   if (!isKnockoutMatch(match)) return score;
   const winner = matchWinnerSide(match);
+  const penalties = penaltyShootoutScore(match);
   const extras = [
-    winner ? `Clasificó ${qualifierLabel(match, winner)}` : "",
+    penalties ? `Penales ${penalties.home} - ${penalties.away}` : "",
+    winner ? `Clasifico ${qualifierLabel(match, winner)}` : "",
     decisionLabel(match.decision),
   ].filter(Boolean);
-  return extras.length ? `${score} · ${extras.join(" · ")}` : score;
+  return extras.length ? `${score} | ${extras.join(" | ")}` : score;
 }
 
 function predictionResultBadge(match, prediction) {
@@ -1390,8 +1413,8 @@ function renderRanking() {
         ${todayMatches.map((match) => {
           const statusClass = match.status === "IN_PLAY" || match.status === "PAUSED" ? "live" : 
                               match.status === "FINISHED" ? "finished" : "scheduled";
-          const scoreText = match.homeScore != null && match.awayScore != null 
-            ? `${match.homeScore} - ${match.awayScore}` 
+          const scoreText = match.homeScore != null && match.awayScore != null
+            ? matchScoreDisplay(match, true)
             : formatKickoff(match.kickoff);
           const statusText = matchStatusLabel(match);
           const canOpenPredictions = isLocked(match);
@@ -1727,10 +1750,12 @@ function applyOfficialKnockoutFixtures(apiMatches) {
       liveMinute: official.liveMinute,
       winner: official.winner,
       decision: official.decision,
+      penaltyHomeScore: official.penaltyHomeScore,
+      penaltyAwayScore: official.penaltyAwayScore,
       apiMatchId: official.id,
       source: "official-api",
     };
-    const changedFields = ["home", "away", "kickoff", "venue", "status", "homeScore", "awayScore", "liveMinute", "winner", "decision", "apiMatchId"]
+    const changedFields = ["home", "away", "kickoff", "venue", "status", "homeScore", "awayScore", "liveMinute", "winner", "decision", "penaltyHomeScore", "penaltyAwayScore", "apiMatchId"]
       .some((field) => next[field] !== match[field]);
     changed ||= changedFields;
     return changedFields ? next : match;
@@ -2573,6 +2598,7 @@ function normalizeApiMatches(data) {
     const liveMinute = extractLiveMinute(match, { kickoff, status });
     const winner = normalizeApiWinner(match, { homeScore, awayScore, status });
     const decision = normalizeApiDecision(match);
+    const penalties = normalizeApiPenaltyScore(match);
     return {
       id: String(match.id || match.idEvent || `api-${index}-${kickoff}`),
       stage: normalizeApiStage(match.group || match.stage || match.strGroup || "Mundial 2026"),
@@ -2586,6 +2612,8 @@ function normalizeApiMatches(data) {
       liveMinute,
       winner,
       decision,
+      penaltyHomeScore: penalties.home,
+      penaltyAwayScore: penalties.away,
     };
   }).filter((match) => match.home && match.away && match.kickoff);
 }
@@ -2593,16 +2621,23 @@ function normalizeApiMatches(data) {
 function normalizeApiMainScore(match) {
   const duration = String(match.score?.duration || match.duration || "").toUpperCase();
   const regular = match.score?.regularTime;
-  const extra = match.score?.extraTime;
-  if (duration.includes("PENAL") && regular?.home != null && regular?.away != null) {
+  if ((duration.includes("PENAL") || duration.includes("EXTRA")) && regular?.home != null && regular?.away != null) {
     return {
-      home: Number(regular.home) + Number(extra?.home || 0),
-      away: Number(regular.away) + Number(extra?.away || 0),
+      home: Number(regular.home),
+      away: Number(regular.away),
     };
   }
   return {
     home: match.score?.fullTime?.home ?? match.intHomeScore ?? match.homeScore ?? null,
     away: match.score?.fullTime?.away ?? match.intAwayScore ?? match.awayScore ?? null,
+  };
+}
+
+function normalizeApiPenaltyScore(match) {
+  const penalties = match.score?.penalties || match.penalties;
+  return {
+    home: penalties?.home == null ? null : Number(penalties.home),
+    away: penalties?.away == null ? null : Number(penalties.away),
   };
 }
 
@@ -2744,8 +2779,6 @@ function extractLiveMinute(match, { kickoff, status }) {
 }
 
 function updateMatchFromApi(existingMatch, apiMatch) {
-  if (existingMatch.status === "FINISHED") return false;
-
   const hasValidScores = apiMatch.homeScore != null && apiMatch.awayScore != null;
   const statusChanged = existingMatch.status !== apiMatch.status;
   const scoresChanged = hasValidScores && (
@@ -2756,8 +2789,13 @@ function updateMatchFromApi(existingMatch, apiMatch) {
   const liveMinuteChanged = existingMatch.liveMinute !== apiMatch.liveMinute;
   const winnerChanged = apiMatch.winner != null && existingMatch.winner !== apiMatch.winner;
   const decisionChanged = apiMatch.decision != null && existingMatch.decision !== apiMatch.decision;
+  const penaltiesChanged = (
+    apiMatch.penaltyHomeScore != null &&
+    apiMatch.penaltyAwayScore != null &&
+    (existingMatch.penaltyHomeScore !== apiMatch.penaltyHomeScore || existingMatch.penaltyAwayScore !== apiMatch.penaltyAwayScore)
+  );
 
-  if (!statusChanged && !scoresChanged && !kickoffChanged && !liveMinuteChanged && !winnerChanged && !decisionChanged) return false;
+  if (!statusChanged && !scoresChanged && !kickoffChanged && !liveMinuteChanged && !winnerChanged && !decisionChanged && !penaltiesChanged) return false;
 
   existingMatch.status = apiMatch.status;
   if (hasValidScores) {
@@ -2768,6 +2806,10 @@ function updateMatchFromApi(existingMatch, apiMatch) {
   existingMatch.liveMinute = ["IN_PLAY", "PAUSED"].includes(apiMatch.status) ? apiMatch.liveMinute : null;
   existingMatch.winner = apiMatch.winner || existingMatch.winner || null;
   existingMatch.decision = apiMatch.decision || existingMatch.decision || null;
+  if (apiMatch.penaltyHomeScore != null && apiMatch.penaltyAwayScore != null) {
+    existingMatch.penaltyHomeScore = apiMatch.penaltyHomeScore;
+    existingMatch.penaltyAwayScore = apiMatch.penaltyAwayScore;
+  }
   return true;
 }
 

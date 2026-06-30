@@ -1,16 +1,23 @@
 function normalizeApiMainScore(match) {
   const duration = String(match.score?.duration || match.duration || "").toUpperCase();
   const regular = match.score?.regularTime;
-  const extra = match.score?.extraTime;
-  if (duration.includes("PENAL") && regular?.home != null && regular?.away != null) {
+  if ((duration.includes("PENAL") || duration.includes("EXTRA")) && regular?.home != null && regular?.away != null) {
     return {
-      home: Number(regular.home) + Number(extra?.home || 0),
-      away: Number(regular.away) + Number(extra?.away || 0),
+      home: Number(regular.home),
+      away: Number(regular.away),
     };
   }
   return {
     home: match.score?.fullTime?.home ?? match.intHomeScore ?? match.homeScore ?? null,
     away: match.score?.fullTime?.away ?? match.intAwayScore ?? match.awayScore ?? null,
+  };
+}
+
+function normalizeApiPenaltyScore(match) {
+  const penalties = match.score?.penalties || match.penalties;
+  return {
+    home: penalties?.home == null ? null : Number(penalties.home),
+    away: penalties?.away == null ? null : Number(penalties.away),
   };
 }
 
@@ -73,3 +80,35 @@ if (JSON.stringify(actual) !== JSON.stringify(expected)) {
 }
 
 console.log(`OK penales: marcador ${actual.home}-${actual.away}, ganador ${actual.winner}, decision ${actual.decision}`);
+
+const fifaStylePenalty = {
+  status: "FINISHED",
+  score: {
+    duration: "PENALTY_SHOOTOUT",
+    fullTime: { home: 1, away: 1 },
+    regularTime: { home: 1, away: 1 },
+    penalties: { home: 2, away: 3 },
+  },
+};
+
+const fifaScore = normalizeApiMainScore(fifaStylePenalty);
+const fifaPenalties = normalizeApiPenaltyScore(fifaStylePenalty);
+const fifaWinner = normalizeApiWinner(fifaStylePenalty, {
+  homeScore: fifaScore.home,
+  awayScore: fifaScore.away,
+  status: "FINISHED",
+});
+
+const fifaExpected = { home: 1, away: 1, penaltyHome: 2, penaltyAway: 3, winner: "away" };
+const fifaActual = {
+  ...fifaScore,
+  penaltyHome: fifaPenalties.home,
+  penaltyAway: fifaPenalties.away,
+  winner: fifaWinner,
+};
+
+if (JSON.stringify(fifaActual) !== JSON.stringify(fifaExpected)) {
+  throw new Error(`Caso FIFA penales mal normalizado: ${JSON.stringify(fifaActual)} esperado ${JSON.stringify(fifaExpected)}`);
+}
+
+console.log(`OK FIFA penales: marcador ${fifaActual.home}-${fifaActual.away}, penales ${fifaActual.penaltyHome}-${fifaActual.penaltyAway}`);
