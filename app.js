@@ -657,14 +657,15 @@ function scorePrediction(prediction, match) {
 
   const matchWasDraw = match.homeScore === match.awayScore;
   const winner = matchWinnerSide(match);
-  const qualifierCorrect = Boolean(matchWasDraw && winner && prediction.qualifier === winner);
+  const predictedWinnerCorrect = Boolean(winner && prediction.qualifier === winner);
+  const qualifierCorrect = Boolean(matchWasDraw && predictedWinnerCorrect);
   if (qualifierCorrect) {
     const bonus = knockoutPhaseBonus(match);
     points += 4 + bonus;
     details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
   }
 
-  const decisionCorrect = Boolean(qualifierCorrect && match.decision && prediction.decision === match.decision);
+  const decisionCorrect = Boolean(predictedWinnerCorrect && match.decision && prediction.decision === match.decision);
   if (decisionCorrect) {
     points += 2;
     details.push("+2 definicion");
@@ -695,8 +696,66 @@ function predictionMetaText(match, prediction) {
   return parts.join(" · ");
 }
 
+function predictedOutcomeSide(home, away) {
+  if (home == null || away == null || home === "" || away === "") return "";
+  const homeScore = Number(home);
+  const awayScore = Number(away);
+  if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) return "";
+  if (homeScore > awayScore) return "home";
+  if (awayScore > homeScore) return "away";
+  return "draw";
+}
+
+function allowedQualifierOptions(prediction) {
+  const side = predictedOutcomeSide(prediction?.home, prediction?.away);
+  if (side === "home" || side === "away") return [side];
+  return ["home", "away"];
+}
+
+function allowedDecisionOptions(prediction) {
+  const side = predictedOutcomeSide(prediction?.home, prediction?.away);
+  if (side === "home" || side === "away") return ["REGULAR", "EXTRA_TIME"];
+  if (side === "draw") return ["EXTRA_TIME", "PENALTIES"];
+  return Object.keys(DECISION_METHODS);
+}
+
+function normalizePredictionChoices(match, home, away, qualifier = "", decision = "") {
+  if (!isKnockoutMatch(match)) return { qualifier: qualifier || "", decision: decision || "" };
+  const draft = { home, away };
+  const qualifierOptions = allowedQualifierOptions(draft);
+  const decisionOptions = allowedDecisionOptions(draft);
+  return {
+    qualifier: qualifierOptions.includes(qualifier) ? qualifier : qualifierOptions[0] || "",
+    decision: decisionOptions.includes(decision) ? decision : decisionOptions[0] || "",
+  };
+}
+
 function knockoutPredictionControls(match, prediction, compact = false) {
   if (!isKnockoutMatch(match)) return "";
+  const qualifierOptions = allowedQualifierOptions(prediction);
+  const decisionOptions = allowedDecisionOptions(prediction);
+  const normalized = normalizePredictionChoices(match, prediction?.home, prediction?.away, prediction?.qualifier, prediction?.decision);
+  const qualifierLocked = qualifierOptions.length === 1;
+  const qualifierOption = (value) => `<option value="${value}" ${normalized.qualifier === value ? "selected" : ""}>${qualifierLabel(match, value)}</option>`;
+  const methodOption = (value) => `<option value="${value}" ${normalized.decision === value ? "selected" : ""}>${DECISION_METHODS[value]}</option>`;
+  return `
+    <div class="knockout-prediction ${compact ? "compact" : ""}" data-knockout-controls="${match.id}">
+      <label>
+        <span>Clasifica</span>
+        <select data-match="${match.id}" data-knockout-field="qualifier" aria-label="Equipo clasificado" ${qualifierLocked ? 'data-auto-locked="true"' : ""}>
+          ${qualifierLocked ? "" : '<option value="">Elige</option>'}
+          ${qualifierOptions.map(qualifierOption).join("")}
+        </select>
+      </label>
+      <label>
+        <span>Definicion</span>
+        <select data-match="${match.id}" data-knockout-field="decision" aria-label="Metodo de definicion">
+          ${decisionOptions.map(methodOption).join("")}
+        </select>
+      </label>
+      <small class="knockout-helper">${qualifierLocked ? "Clasificado ajustado por marcador." : "Si empatas, eliges quien pasa."}</small>
+    </div>
+  `;
   const option = (value) => `<option value="${value}" ${prediction?.qualifier === value ? "selected" : ""}>${qualifierLabel(match, value)}</option>`;
   return `
     <div class="knockout-prediction ${compact ? "compact" : ""}">
@@ -1162,8 +1221,35 @@ function renderMatchesPage() {
   bindScoreInputs();
 }
 
+function syncKnockoutControls(container, match) {
+  if (!container || !isKnockoutMatch(match)) return;
+  const homeInput = container.querySelector('[data-side="home"]');
+  const awayInput = container.querySelector('[data-side="away"]');
+  const controls = container.querySelector(`[data-knockout-controls="${match.id}"]`);
+  if (!homeInput || !awayInput || !controls) return;
+  const currentQualifier = controls.querySelector('[data-knockout-field="qualifier"]')?.value || "";
+  const currentDecision = controls.querySelector('[data-knockout-field="decision"]')?.value || "";
+  const draft = {
+    home: homeInput.value === "" ? "" : Number(homeInput.value),
+    away: awayInput.value === "" ? "" : Number(awayInput.value),
+    qualifier: currentQualifier,
+    decision: currentDecision,
+  };
+  controls.outerHTML = knockoutPredictionControls(match, draft, controls.classList.contains("compact"));
+  bindScoreInputs();
+}
+
 function bindScoreInputs() {
   $$(".score-input[data-match], [data-knockout-field][data-match]").forEach((input) => {
+    if (input.dataset.predictionBound === "true") return;
+    input.dataset.predictionBound = "true";
+    if (input.classList.contains("score-input")) {
+      input.addEventListener("input", () => {
+        const match = state.matches.find((item) => item.id === input.dataset.match);
+        if (!match || isLocked(match)) return;
+        syncKnockoutControls(input.closest(".match-card, .list-match-card"), match);
+      });
+    }
     input.addEventListener("change", async () => {
       const match = state.matches.find((item) => item.id === input.dataset.match);
       if (!match || isLocked(match)) return;
@@ -1187,8 +1273,11 @@ function bindScoreInputs() {
         showToast("Usa un marcador entre 0 y 20.");
         return;
       }
-      const qualifier = qualifierInput?.value || "";
-      const decision = decisionInput?.value || "";
+      const normalizedChoices = normalizePredictionChoices(match, home, away, qualifierInput?.value || "", decisionInput?.value || "");
+      if (qualifierInput) qualifierInput.value = normalizedChoices.qualifier;
+      if (decisionInput) decisionInput.value = normalizedChoices.decision;
+      const qualifier = normalizedChoices.qualifier;
+      const decision = normalizedChoices.decision;
       if (isKnockoutMatch(match) && (!qualifier || !decision)) {
         showToast("En eliminatoria elige clasificado y definición.");
         return;

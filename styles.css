@@ -792,6 +792,23 @@ main {
   border-color: var(--gold);
 }
 
+.knockout-prediction select[data-auto-locked="true"] {
+  color: #111;
+  border-color: rgba(255,193,7,.72);
+  background: linear-gradient(135deg, #ffd44d, #ffb300);
+  box-shadow: 0 0 18px rgba(255,193,7,.14);
+}
+
+.knockout-helper {
+  grid-column: 1 / -1;
+  margin-top: -2px;
+  color: rgba(255,255,255,.58);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
 .knockout-prediction.compact {
   grid-column: 1 / -1;
   margin-top: 7px;
