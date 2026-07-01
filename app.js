@@ -715,7 +715,7 @@ function allowedQualifierOptions(prediction) {
 function allowedDecisionOptions(prediction) {
   const side = predictedOutcomeSide(prediction?.home, prediction?.away);
   if (side === "home" || side === "away") return ["REGULAR", "EXTRA_TIME"];
-  if (side === "draw") return ["EXTRA_TIME", "PENALTIES"];
+  if (side === "draw") return ["PENALTIES"];
   return Object.keys(DECISION_METHODS);
 }
 
