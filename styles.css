@@ -6476,6 +6476,196 @@ dialog::backdrop {
   height: 34px;
 }
 
+/* Compact knockout bracket: denser mobile-first board with live results. */
+.knockout-result {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  display: inline-grid;
+  justify-items: end;
+  gap: 1px;
+  color: var(--gold);
+  text-align: right;
+  line-height: 1;
+}
+
+.knockout-result strong {
+  color: var(--white);
+  font: 11px "Archivo Black", sans-serif;
+}
+
+.knockout-result span,
+.knockout-result small {
+  color: var(--gold);
+  font-size: 6.8px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .knockout-heading {
+    padding: 12px 10px 8px;
+  }
+
+  .knockout-heading h1 {
+    font-size: 24px;
+    line-height: .95;
+  }
+
+  .knockout-heading p {
+    font-size: 10px;
+  }
+
+  .knockout-layout {
+    padding: 0 6px 76px;
+  }
+
+  .knockout-summary {
+    margin-bottom: 7px;
+    padding: 7px 8px;
+    border-radius: 12px;
+  }
+
+  .knockout-summary img {
+    width: 34px;
+    height: 34px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .knockout-summary .eyebrow {
+    font-size: 7px;
+  }
+
+  .knockout-summary strong {
+    margin: 1px 0;
+    font-size: 12px;
+  }
+
+  .knockout-summary small {
+    font-size: 8.5px;
+    line-height: 1.2;
+  }
+
+  .knockout-qualifier-strip,
+  .knockout-qualifier-rail,
+  .knockout-note {
+    display: none;
+  }
+
+  .knockout-desktop-board {
+    margin-top: 7px;
+    border-radius: 16px;
+  }
+
+  .knockout-board-title {
+    padding: 10px 10px 0;
+  }
+
+  .knockout-board-title span {
+    font-size: 7px;
+  }
+
+  .knockout-board-title strong {
+    font-size: 21px;
+    line-height: .9;
+  }
+
+  .knockout-scroll {
+    padding: 8px 9px 12px;
+  }
+
+  .knockout-rounds {
+    min-width: 820px;
+    grid-template-columns: 1.42fr 1.1fr .9fr .76fr .64fr .64fr;
+    gap: 10px;
+    padding-right: 150px;
+    --bracket-source-height: 76px;
+    --bracket-node-height: 56px;
+    --bracket-source-gap: 7px;
+    --bracket-pair-gap: 112px;
+    --bracket-round-gap: 280px;
+    --bracket-semi-gap: 620px;
+  }
+
+  .knockout-round-head {
+    min-height: 34px;
+    margin-bottom: 6px;
+  }
+
+  .knockout-round-head strong {
+    font-size: 9px;
+  }
+
+  .knockout-round-head span {
+    font-size: 8px;
+  }
+
+  .knockout-match {
+    padding: 5px 5px 5px 25px;
+    border-radius: 9px;
+  }
+
+  .knockout-code {
+    left: 5px;
+    top: 6px;
+    padding: 2px 4px;
+    font-size: 6.5px;
+  }
+
+  .knockout-result {
+    top: 5px;
+    right: 6px;
+  }
+
+  .knockout-result strong {
+    font-size: 9px;
+  }
+
+  .knockout-result span,
+  .knockout-result small {
+    font-size: 5.8px;
+  }
+
+  .knockout-team {
+    min-height: 24px;
+    padding-right: 24px;
+  }
+
+  .knockout-team-main {
+    gap: 4px;
+    font-size: 8.5px;
+    line-height: 1;
+  }
+
+  .knockout-team small {
+    margin-top: 2px;
+    font-size: 6.8px;
+  }
+
+  .knockout-team + .knockout-team {
+    margin-top: 2px;
+    padding-top: 2px;
+  }
+
+  .knockout-round:nth-child(2) .knockout-matches {
+    padding-top: 52px;
+  }
+
+  .knockout-round:nth-child(3) .knockout-matches {
+    padding-top: 136px;
+  }
+
+  .knockout-round:nth-child(4) .knockout-matches {
+    padding-top: 306px;
+  }
+
+  .knockout-round:nth-child(5) .knockout-matches,
+  .knockout-round:nth-child(6) .knockout-matches {
+    padding-top: 644px;
+  }
+}
+
 /* =====================================================
    STATISTICS PRO VIEW
    Readable day-by-day ranking evolution with mobile horizontal scan.

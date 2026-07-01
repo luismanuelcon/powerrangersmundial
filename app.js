@@ -1916,25 +1916,91 @@ function knockoutTeamMarkup(team, fallback) {
   `;
 }
 
+function sourceCodeFromLabel(value) {
+  const raw = String(value || "");
+  const semifinal = raw.match(/semifinal\s*(\d+)/i);
+  if (semifinal) return semifinal[1] === "1" ? "P101" : "P102";
+  const match = raw.match(/P\d+/i);
+  return match ? match[0].toUpperCase() : "";
+}
+
+function knockoutWinnerName(match) {
+  if (!match || match.status !== "FINISHED") return "";
+  const winner = matchWinnerSide(match);
+  if (winner === "home") return match.home;
+  if (winner === "away") return match.away;
+  return "";
+}
+
+function knockoutLoserName(match) {
+  if (!match || match.status !== "FINISHED") return "";
+  const winner = matchWinnerSide(match);
+  if (winner === "home") return match.away;
+  if (winner === "away") return match.home;
+  return "";
+}
+
+function knockoutTeamFromSourceLabel(label) {
+  const code = sourceCodeFromLabel(label);
+  if (!code) return "";
+  const sourceMatch = state.matches.find((match) => String(match.code).toUpperCase() === code);
+  const wantsLoser = /perdedor/i.test(String(label || ""));
+  return (wantsLoser ? knockoutLoserName(sourceMatch) : knockoutWinnerName(sourceMatch)) || label;
+}
+
+function resolveKnockoutSlotValue(value) {
+  if (value && typeof value === "object") return value;
+  if (!sourceCodeFromLabel(value)) return value;
+  return knockoutTeamFromSourceLabel(value);
+}
+
+function knockoutScoreMarkup(match) {
+  if (!match || match.homeScore == null || match.awayScore == null) return "";
+  const status = match.status === "FINISHED" ? "FINAL" : matchStatusLabel(match);
+  const penalties = penaltyShootoutScore(match);
+  return `
+    <div class="knockout-result">
+      <strong>${match.homeScore}-${match.awayScore}</strong>
+      ${penalties ? `<span>Pen ${penalties.home}-${penalties.away}</span>` : ""}
+      ${status ? `<small>${escapeHtml(status)}</small>` : ""}
+    </div>
+  `;
+}
+
 function knockoutRoundMatches(round, projection) {
   const officialMatches = round.matches.map((slot, index) => {
     const current = state.matches.find((match) => match.code === slot.code);
-    if (!current || current.source !== "official-api") return null;
+    if (!current || (current.source !== "official-api" && current.status === "SCHEDULED")) return null;
     return {
       code: slot.code,
-      home: current.home,
-      away: current.away,
+      home: resolveKnockoutSlotValue(current.home),
+      away: resolveKnockoutSlotValue(current.away),
       kickoff: current.kickoff,
       status: current.status,
       homeScore: current.homeScore,
       awayScore: current.awayScore,
+      winner: current.winner,
+      decision: current.decision,
+      penaltyHomeScore: current.penaltyHomeScore,
+      penaltyAwayScore: current.penaltyAwayScore,
     };
   });
   if (officialMatches.some(Boolean)) {
-    return round.matches.map((slot, index) => officialMatches[index] || slot);
+    return round.matches.map((slot, index) => {
+      if (officialMatches[index]) return officialMatches[index];
+      return {
+        ...slot,
+        home: resolveKnockoutSlotValue(slot.home),
+        away: resolveKnockoutSlotValue(slot.away),
+      };
+    });
   }
   if (round.name === "Ronda de 32") return projectedRoundOf32Matches(projection);
-  return round.matches;
+  return round.matches.map((slot) => ({
+    ...slot,
+    home: resolveKnockoutSlotValue(slot.home),
+    away: resolveKnockoutSlotValue(slot.away),
+  }));
 }
 
 async function renderKnockoutBracket() {
@@ -1997,6 +2063,7 @@ async function renderKnockoutBracket() {
               ${matches.map((match, matchIndex) => `
                 <article class="knockout-match">
                   <div class="knockout-code">${escapeHtml(match.code)}</div>
+                  ${knockoutScoreMarkup(match)}
                   ${knockoutTeamMarkup(match.home && typeof match.home === "object" ? match.home : null, typeof match.home === "string" ? match.home : `Clasificado ${matchIndex * 2 + 1}`)}
                   ${knockoutTeamMarkup(match.away && typeof match.away === "object" ? match.away : null, typeof match.away === "string" ? match.away : `Clasificado ${matchIndex * 2 + 2}`)}
                 </article>
@@ -2029,6 +2096,7 @@ async function renderKnockoutBracket() {
                 ${matches.map((match, matchIndex) => `
                   <article class="knockout-match">
                     <div class="knockout-code">${escapeHtml(match.code)}</div>
+                    ${knockoutScoreMarkup(match)}
                     ${knockoutTeamMarkup(match.home && typeof match.home === "object" ? match.home : null, typeof match.home === "string" ? match.home : `Clasificado ${matchIndex * 2 + 1}`)}
                     ${knockoutTeamMarkup(match.away && typeof match.away === "object" ? match.away : null, typeof match.away === "string" ? match.away : `Clasificado ${matchIndex * 2 + 2}`)}
                   </article>
