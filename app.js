@@ -656,16 +656,22 @@ function scorePrediction(prediction, match) {
   }
 
   const matchWasDraw = match.homeScore === match.awayScore;
+  const predictionWasDraw = prediction.home === prediction.away;
   const winner = matchWinnerSide(match);
   const predictedWinnerCorrect = Boolean(winner && prediction.qualifier === winner);
-  const qualifierCorrect = Boolean(matchWasDraw && predictedWinnerCorrect);
+  const qualifierCorrect = Boolean(matchWasDraw && predictionWasDraw && predictedWinnerCorrect);
   if (qualifierCorrect) {
     const bonus = knockoutPhaseBonus(match);
     points += 4 + bonus;
     details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
   }
 
-  const decisionCorrect = Boolean(predictedWinnerCorrect && match.decision && prediction.decision === match.decision);
+  const decisionCorrect = Boolean(
+    predictedWinnerCorrect &&
+    match.decision &&
+    prediction.decision === match.decision &&
+    (!matchWasDraw || predictionWasDraw)
+  );
   if (decisionCorrect) {
     points += 2;
     details.push("+2 definicion");

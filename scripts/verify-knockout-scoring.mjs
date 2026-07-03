@@ -68,15 +68,21 @@ function scorePrediction(prediction, match) {
   }
 
   const matchWasDraw = match.homeScore === match.awayScore;
+  const predictionWasDraw = prediction.home === prediction.away;
   const predictedWinnerCorrect = Boolean(matchWinnerSide(match) && prediction.qualifier === matchWinnerSide(match));
-  const qualifierCorrect = Boolean(matchWasDraw && predictedWinnerCorrect);
+  const qualifierCorrect = Boolean(matchWasDraw && predictionWasDraw && predictedWinnerCorrect);
   if (qualifierCorrect) {
     const bonus = KNOCKOUT_PHASE_BONUS[match.stage] || 0;
     points += 4 + bonus;
     details.push(`+4 clasificado${bonus ? ` +${bonus} fase` : ""}`);
   }
 
-  const decisionCorrect = Boolean(predictedWinnerCorrect && match.decision && prediction.decision === match.decision);
+  const decisionCorrect = Boolean(
+    predictedWinnerCorrect &&
+    match.decision &&
+    prediction.decision === match.decision &&
+    (!matchWasDraw || predictionWasDraw)
+  );
   if (decisionCorrect) {
     points += 2;
     details.push("+2 definicion");
@@ -123,6 +129,16 @@ const cases = [
     name: "definicion no suma si falla clasificado",
     actual: scorePrediction({ home: 1, away: 1, qualifier: "home", decision: "PENALTIES" }, finalByPenalties).points,
     expected: 5,
+  },
+  {
+    name: "clasificado no suma si no pronostico empate",
+    actual: scorePrediction({ home: 1, away: 2, qualifier: "away", decision: "REGULAR" }, finalByPenalties).points,
+    expected: 0,
+  },
+  {
+    name: "penales no suma si no pronostico empate",
+    actual: scorePrediction({ home: 1, away: 2, qualifier: "away", decision: "PENALTIES" }, finalByPenalties).points,
+    expected: 0,
   },
   {
     name: "definicion no suma si partido tiene ganador en 90",
